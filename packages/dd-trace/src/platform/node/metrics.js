@@ -23,8 +23,6 @@ reset()
 
 const macAddress = getMacAddress()
 
-console.log(macAddress)
-
 module.exports = function () {
   return metrics || (metrics = { // cache the metrics instance
     start: (options) => {
@@ -286,6 +284,8 @@ function getMacAddress () {
   for (const key in interfaces) {
     const assignment = interfaces[key]
       .find(assignment => assignment.mac !== loopback)
+
+    console.log(assignment)
 
     if (assignment) return assignment.mac
   }

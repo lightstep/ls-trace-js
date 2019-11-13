@@ -165,6 +165,21 @@ jobs:
       - *yarn-rebuild
       - *yarn-test-core
 
+  # macOS tests
+
+  node-core-mac:
+    macos:
+      xcode: "10.2.0"
+    working_directory: ~/dd-trace-js
+    steps:
+      - checkout
+      - *yarn-versions
+      - *restore-yarn-cache
+      - *yarn-install
+      - *save-yarn-cache
+      - *yarn-rebuild
+      - *yarn-test-core
+
   # Plugin tests
 
   node-amqplib:
