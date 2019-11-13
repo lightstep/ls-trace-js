@@ -40,7 +40,7 @@ class Writer {
   flush () {
     if (this._queue.length > 0) {
       const data = platform.msgpack.prefix(this._queue)
-      const size = data.reduce((prev, next) => prev + next.length, 0)
+      // const size = data.reduce((prev, next) => prev + next.length, 0)
 
       this._request(data, this._queue.length)
 
