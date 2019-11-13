@@ -21,11 +21,16 @@ let counters
 
 reset()
 
+const macAddress = getMacAddress()
+
+console.log(macAddress)
+
 module.exports = function () {
   return metrics || (metrics = { // cache the metrics instance
     start: (options) => {
       const tags = [
-        `service:${this._config.service}`
+        `service:${this._config.service}`,
+        `mac_address:${macAddress}`
       ]
 
       if (this._config.env) {
@@ -272,4 +277,18 @@ function histogram (name, stats, tags) {
   client.increment(`${name}.count`, stats.count, tags)
   client.gauge(`${name}.median`, stats.median, tags)
   client.gauge(`${name}.95percentile`, stats.p95, tags)
+}
+
+function getMacAddress () {
+  const loopback = '00:00:00:00:00:00'
+  const interfaces = os.networkInterfaces()
+
+  for (const key in interfaces) {
+    const assignment = interfaces[key]
+      .find(assignment => assignment.mac !== loopback)
+
+    if (assignment) return assignment.mac
+  }
+
+  return loopback
 }
