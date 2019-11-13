@@ -281,8 +281,6 @@ function getMacAddress () {
   const loopback = '00:00:00:00:00:00'
   const interfaces = os.networkInterfaces()
 
-  console.log(interfaces)
-
   for (const key in interfaces) {
     const assignment = interfaces[key]
       .find(assignment => assignment.mac !== loopback)

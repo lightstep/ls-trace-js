@@ -418,15 +418,17 @@ describe('Platform', () => {
         it('it should initialize the Dogstatsd client with the correct options', () => {
           metrics.apply(platform).start()
 
-          expect(Client).to.have.been.calledWithMatch({
-            host: 'localhost',
-            tags: [
-              'service:service',
-              'env:test',
-              'str:bar',
-              'invalid:t_e_s_t5-:./'
-            ]
-          })
+          expect(Client).to.have.been.called
+          expect(Client.firstCall.args[0]).to.have.property('host', 'localhost')
+          expect(Client.firstCall.args[0]).to.have.property('tags')
+          expect(Client.firstCall.args[0].tags).to.contain('service:service')
+          expect(Client.firstCall.args[0].tags).to.contain('env:test')
+          expect(Client.firstCall.args[0].tags).to.contain('str:bar')
+          expect(Client.firstCall.args[0].tags).to.contain('invalid:t_e_s_t5-:./')
+          expect(Client.firstCall.args[0].tags.some(
+            tag => /^mac_address:([a-f0-9]{2}:){5}[a-f0-9]{2}$/i.test(tag))
+          ).to.be.true
+          expect(Client.firstCall.args[0].tags).to.not.contain('mac_address:00:00:00:00:00:00')
         })
 
         it('should start collecting metrics every 10 seconds', () => {

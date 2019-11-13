@@ -682,6 +682,7 @@ workflows:
       - node-core-12
       - node-core-latest
       - node-core-windows
+      - node-core-mac
       - node-bench-latest
       - node-amqplib
       - node-amqp10
@@ -813,6 +814,7 @@ workflows:
       - node-core-12
       - node-core-latest
       - node-core-windows
+      - node-core-mac
       - node-bench-latest
       - node-amqplib
       - node-amqp10
