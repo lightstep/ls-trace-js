@@ -64,52 +64,53 @@ module.exports = function (config) {
     webpack: webpackConfig.find(entry => entry.mode === 'development')
   }
 
-  if (process.env.CI === 'true') {
-    // https://github.com/karma-runner/karma-browserstack-launcher
-    opts.browserStack = {
-      project: 'dd-trace-js'
-    }
+  // TODO: set up browserstack to rune these tests
+  // if (process.env.CI === 'true') {
+  //   // https://github.com/karma-runner/karma-browserstack-launcher
+  //   opts.browserStack = {
+  //     project: 'dd-trace-js'
+  //   }
 
-    opts.customLaunchers = {
-      bs_edge: {
-        base: 'BrowserStack',
-        browser: 'Edge',
-        browser_version: '18.0',
-        os: 'Windows',
-        os_version: '10'
-      },
+  //   opts.customLaunchers = {
+  //     bs_edge: {
+  //       base: 'BrowserStack',
+  //       browser: 'Edge',
+  //       browser_version: '18.0',
+  //       os: 'Windows',
+  //       os_version: '10'
+  //     },
 
-      bs_ie11: {
-        base: 'BrowserStack',
-        browser: 'IE',
-        browser_version: '11.0',
-        os: 'Windows',
-        os_version: '10'
-      },
+  //     bs_ie11: {
+  //       base: 'BrowserStack',
+  //       browser: 'IE',
+  //       browser_version: '11.0',
+  //       os: 'Windows',
+  //       os_version: '10'
+  //     },
 
-      bs_ie10: {
-        base: 'BrowserStack',
-        browser: 'IE',
-        browser_version: '10.0',
-        os: 'Windows',
-        os_version: '8'
-      },
+  //     bs_ie10: {
+  //       base: 'BrowserStack',
+  //       browser: 'IE',
+  //       browser_version: '10.0',
+  //       os: 'Windows',
+  //       os_version: '8'
+  //     },
 
-      bs_safari: {
-        base: 'BrowserStack',
-        browser: 'Safari',
-        browser_version: '12.0',
-        os: 'OS X',
-        os_version: 'Mojave'
-      }
-    }
+  //     bs_safari: {
+  //       base: 'BrowserStack',
+  //       browser: 'Safari',
+  //       browser_version: '12.0',
+  //       os: 'OS X',
+  //       os_version: 'Mojave'
+  //     }
+  //   }
 
-    opts.reporters.push('BrowserStack')
+  //   opts.reporters.push('BrowserStack')
 
-    for (const browser in opts.customLaunchers) {
-      opts.browsers.push(browser)
-    }
-  }
+  //   for (const browser in opts.customLaunchers) {
+  //     opts.browsers.push(browser)
+  //   }
+  // }
 
   config.set(opts)
 }
