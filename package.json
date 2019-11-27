@@ -39,7 +39,7 @@
     "opentracing",
     "apm"
   ],
-  "author": "Datadog Inc. <info@datadoghq.com>",
+  "author": "LightStep <support@lightstep.com>",
   "license": "BSD-3-Clause",
   "bugs": {
     "url": "https://github.com/lightstep/ls-trace-js/issues"
