@@ -1,7 +1,7 @@
 {
   "name": "ls-trace",
   "version": "0.1.0",
-  "description": "Datadog/LS APM tracing client for JavaScript",
+  "description": "LightStep fork of Datadog's APM tracing client for JavaScript",
   "main": "index.js",
   "browser": "browser.js",
   "typings": "index.d.ts",
