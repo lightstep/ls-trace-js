@@ -26,9 +26,7 @@ const span = {
     _tags: {
       resource: '/resource',
       type: 'web',
-      error: true
-    },
-    _metrics: {
+      error: true,
       [SAMPLE_RATE_METRIC_KEY]: 1
     },
     _sampling: {},
@@ -36,7 +34,10 @@ const span = {
     _name: 'operation'
   }),
   _startTime: 1500000000000.123456,
-  _duration: 100
+  _duration: 100,
+  _spanContext: {
+    _name: 'operation'
+  }
 }
 
 module.exports = span

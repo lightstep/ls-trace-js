@@ -20,13 +20,6 @@ const AUTO_KEEP = ext.priority.AUTO_KEEP
 const USER_KEEP = ext.priority.USER_KEEP
 const DEFAULT_KEY = 'service:,env:'
 
-const priorities = new Set([
-  USER_REJECT,
-  AUTO_REJECT,
-  AUTO_KEEP,
-  USER_KEEP
-])
-
 class PrioritySampler {
   constructor (env, { sampleRate, rateLimit = 100, rules = [] } = {}) {
     this._env = env
@@ -76,7 +69,15 @@ class PrioritySampler {
   }
 
   validate (samplingPriority) {
-    return priorities.has(samplingPriority)
+    switch (samplingPriority) {
+      case USER_REJECT:
+      case USER_KEEP:
+      case AUTO_REJECT:
+      case AUTO_KEEP:
+        return true
+      default:
+        return false
+    }
   }
 
   _getContext (span) {
@@ -100,7 +101,7 @@ class PrioritySampler {
   }
 
   _isSampledByRule (context, rule) {
-    context._metrics[SAMPLING_RULE_DECISION] = rule.sampleRate
+    context._tags[SAMPLING_RULE_DECISION] = rule.sampleRate
 
     return rule.sampler.isSampled(context)
   }
@@ -108,7 +109,7 @@ class PrioritySampler {
   _isSampledByRateLimit (context) {
     const allowed = this._limiter.isAllowed()
 
-    context._metrics[SAMPLING_LIMIT_DECISION] = this._limiter.effectiveRate()
+    context._tags[SAMPLING_LIMIT_DECISION] = this._limiter.effectiveRate()
 
     return allowed
   }
@@ -117,7 +118,7 @@ class PrioritySampler {
     const key = `service:${context._tags[SERVICE_NAME]},env:${this._env}`
     const sampler = this._samplers[key] || this._samplers[DEFAULT_KEY]
 
-    context._metrics[SAMPLING_AGENT_DECISION] = sampler.rate()
+    context._tags[SAMPLING_AGENT_DECISION] = sampler.rate()
 
     return sampler.isSampled(context)
   }
@@ -131,7 +132,9 @@ class PrioritySampler {
   }
 
   _findRule (context) {
-    return this._rules.find(rule => this._matchRule(context, rule))
+    for (let i = 0, l = this._rules.length; i < l; i++) {
+      if (this._matchRule(context, this._rules[i])) return this._rules[i]
+    }
   }
 
   _matchRule (context, rule) {

@@ -1,8 +1,9 @@
 'use strict'
 
+const URL = require('url-parse')
 const { Reference, REFERENCE_CHILD_OF } = require('opentracing')
 const { REFERENCE_NOOP } = require('../../dd-trace/src/constants')
-const tx = require('../../dd-trace/src/plugins/util/tx')
+const tx = require('../../dd-trace/src/plugins/util/http')
 
 function createWrapFetch (tracer, config) {
   return function wrapFetch (fetch) {
@@ -17,7 +18,7 @@ function createWrapFetch (tracer, config) {
       const scope = tracer.scope()
       const childOf = scope.active()
       const type = isFlush(tracer._url.href, url) ? REFERENCE_NOOP : REFERENCE_CHILD_OF
-      const span = tracer.startSpan('http.request', {
+      const span = tracer.startSpan('browser.request', {
         references: [
           new Reference(type, childOf)
         ],
@@ -32,7 +33,7 @@ function createWrapFetch (tracer, config) {
       })
 
       // HACK: move to backend
-      span.context()._metrics._top_level = 1
+      span.setTag('_top_level', 1)
 
       if (type === REFERENCE_CHILD_OF) {
         init = inject(init, tracer, span, url.origin)
@@ -76,7 +77,9 @@ function inject (init, tracer, span, origin) {
   const format = window.ddtrace.ext.formats.HTTP_HEADERS
   const peers = tracer._peers
 
-  if (origin !== window.location.origin && peers.indexOf(origin) === -1) return
+  if (origin !== window.location.origin && !tx.isPeer(origin, peers)) {
+    return init
+  }
 
   init = init || {}
   init.headers = init.headers || {}
@@ -96,8 +99,11 @@ function inject (init, tracer, span, origin) {
   return init
 }
 
+// TODO: support staging and other environments
 function isFlush (href, url) {
-  return (new RegExp(`^${href}/v1/input/[a-z0-9]+$`, 'i')).test(url.href)
+  return (new RegExp(`^${href}/v1/input/[a-z0-9]+$`, 'i')).test(url.href) ||
+    url.href.startsWith('https://rum-http-intake.logs.datadoghq.com') ||
+    url.href.startsWith('https://browser-http-intake.logs.datadoghq.com')
 }
 
 module.exports = {

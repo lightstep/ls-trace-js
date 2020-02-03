@@ -76,24 +76,25 @@ class Scope extends Base {
   _await (span) {
     if (!this._promises[this._depth]) return
 
+    this._enabled = false
     this._awaitAsync(span)
+    this._enabled = true
   }
 
   // https://github.com/nodejs/node/issues/22360
   async _awaitAsync (span) {
     await {
-      then: () => {
+      then: (resolve) => {
         this._current = span
+        resolve()
       }
     }
   }
 
   _initPromise () {
     if (!this._promises[this._depth]) {
-      this._enabled = false
       this._promises[this._depth] = true
       this._await(this._current)
-      this._enabled = true
     }
   }
 
@@ -108,8 +109,8 @@ class Scope extends Base {
       this._weaks.set(resource, asyncId)
     }
 
-    platform.metrics().increment('async.resources')
-    platform.metrics().increment('async.resources.by.type', `resource_type:${type}`)
+    platform.metrics().increment('runtime.node.async.resources')
+    platform.metrics().increment('runtime.node.async.resources.by.type', `resource_type:${type}`)
 
     if (this._trackAsyncScope && type === 'PROMISE') {
       this._initPromise()
@@ -129,8 +130,8 @@ class Scope extends Base {
     const type = this._types[asyncId]
 
     if (type) {
-      platform.metrics().decrement('async.resources')
-      platform.metrics().decrement('async.resources.by.type', `resource_type:${type}`)
+      platform.metrics().decrement('runtime.node.async.resources')
+      platform.metrics().decrement('runtime.node.async.resources.by.type', `resource_type:${type}`)
     }
 
     delete this._spans[asyncId]

@@ -3,11 +3,10 @@
 /* eslint-disable no-console */
 
 const axios = require('axios')
+const checksum = require('checksum')
 const fs = require('fs')
-const mkdirp = require('mkdirp')
 const os = require('os')
 const path = require('path')
-const tar = require('tar')
 const exec = require('./helpers/exec')
 const title = require('./helpers/title')
 
@@ -28,15 +27,6 @@ const branch = exec.pipe(`git symbolic-ref --short HEAD`)
 
 console.log(branch)
 
-const platforms = [
-  'darwin-x32',
-  'darwin-x64',
-  'linux-x32',
-  'linux-x64',
-  'win32-ia32',
-  'win32-x64'
-]
-
 const client = axios.create({
   baseURL: 'https://circleci.com/api/v2/',
   timeout: 5000,
@@ -49,14 +39,16 @@ const fetch = (url, options) => {
   console.log(`GET ${url}`)
 
   return client.get(url, options)
+    .catch(() => client.get(url, options))
+    .catch(() => client.get(url, options))
 }
 
 getPipeline()
-  .then(getWorkflowId)
   .then(getWorkflow)
-  .then(getPrebuildJobs)
-  .then(downloadPrebuilds)
-  .then(zipPrebuilds)
+  .then(getPrebuildsJob)
+  .then(getPrebuildArtifacts)
+  .then(downloadArtifacts)
+  .then(validatePrebuilds)
   .then(copyPrebuilds)
   .then(bundle)
   .catch(e => {
@@ -78,23 +70,22 @@ function getPipeline () {
     })
 }
 
-function getWorkflowId (pipeline) {
-  return fetch(`pipeline/${pipeline.id}`)
+function getWorkflow (pipeline) {
+  return fetch(`pipeline/${pipeline.id}/workflow`)
     .then(response => {
-      const workflow = response.data.workflows[0]
+      const workflows = response.data.items
+        .sort((a, b) => (a.stopped_at < b.stopped_at) ? 1 : -1)
+      const running = workflows.find(workflow => !workflow.stopped_at)
 
-      if (!workflow) {
-        throw new Error(`Unable to find CircleCI workflow for pipeline ${workflow.id}.`)
+      if (running) {
+        throw new Error(`Workflow ${running.id} is still running for pipeline ${pipeline.id}.`)
       }
 
-      return workflow.id
-    })
-}
+      const workflow = workflows[0]
 
-function getWorkflow (id) {
-  return fetch(`workflow/${id}`)
-    .then(response => {
-      const workflow = response.data
+      if (!workflow) {
+        throw new Error(`Unable to find CircleCI workflow for pipeline ${pipeline.id}.`)
+      }
 
       if (workflow.status !== 'success') {
         throw new Error(`Aborting because CircleCI workflow ${workflow.id} did not succeed.`)
@@ -104,32 +95,25 @@ function getWorkflow (id) {
     })
 }
 
-function getPrebuildJobs (workflow) {
-  return fetch(`workflow/${workflow.id}/jobs`)
+function getPrebuildsJob (workflow) {
+  return fetch(`workflow/${workflow.id}/job`)
     .then(response => {
-      const jobs = response.data.items
-        .filter(item => /^prebuild-.+$/.test(item.name))
+      const job = response.data.items
+        .find(item => item.name === 'prebuilds')
 
-      if (jobs.length < 8) {
+      if (!job) {
         throw new Error(`Missing prebuild jobs in workflow ${workflow.id}.`)
       }
 
-      return jobs
+      return job
     })
-}
-
-function downloadPrebuilds (jobs) {
-  return Promise.all(jobs.map(job => {
-    return getPrebuildArtifacts(job)
-      .then(downloadArtifacts)
-  }))
 }
 
 function getPrebuildArtifacts (job) {
   return fetch(`project/github/lightstep/ls-trace-js/${job.job_number}/artifacts`)
     .then(response => {
       const artifacts = response.data.items
-        .filter(artifact => /\/prebuilds\//.test(artifact.url))
+        .filter(artifact => /\/prebuilds\.tgz/.test(artifact.url))
 
       if (artifacts.length === 0) {
         throw new Error(`Missing artifacts in job ${job.job_number}.`)
@@ -140,17 +124,17 @@ function getPrebuildArtifacts (job) {
 }
 
 function downloadArtifacts (artifacts) {
-  return Promise.all(artifacts.map(downloadArtifact))
+  const files = artifacts.map(artifact => artifact.url)
+
+  return Promise.all(files.map(downloadArtifact))
 }
 
-function downloadArtifact (artifact) {
-  return fetch(artifact.url, { responseType: 'stream' })
+function downloadArtifact (file) {
+  return fetch(file, { responseType: 'stream' })
     .then(response => {
-      const parts = artifact.url.split('/')
-      const basename = path.join(os.tmpdir(), parts.slice(-3, -1).join(path.sep))
+      const parts = file.split('/')
+      const basename = os.tmpdir()
       const filename = parts.slice(-1)[0]
-
-      mkdirp.sync(basename)
 
       return new Promise((resolve, reject) => {
         response.data.pipe(fs.createWriteStream(path.join(basename, filename)))
@@ -160,29 +144,24 @@ function downloadArtifact (artifact) {
     })
 }
 
-function zipPrebuilds () {
-  platforms.forEach(platform => {
-    tar.create({
-      gzip: true,
-      sync: true,
-      portable: true,
-      file: path.join(os.tmpdir(), `addons-${platform}.tgz`),
-      cwd: os.tmpdir()
-    }, [`prebuilds/${platform}`])
-  })
+function validatePrebuilds () {
+  const file = path.join(os.tmpdir(), 'prebuilds.tgz')
+  const content = fs.readFileSync(file)
+  const sum = fs.readFileSync(path.join(`${file}.sha1`), 'ascii')
+
+  if (sum !== checksum(content)) {
+    throw new Error('Invalid checksum for "prebuilds.tgz".')
+  }
 }
 
 function copyPrebuilds () {
   const basename = path.normalize(path.join(__dirname, '..'))
+  const filename = 'prebuilds.tgz'
 
-  platforms
-    .map(platform => `addons-${platform}.tgz`)
-    .forEach(filename => {
-      fs.copyFileSync(
-        path.join(os.tmpdir(), filename),
-        path.join(basename, filename)
-      )
-    })
+  fs.copyFileSync(
+    path.join(os.tmpdir(), filename),
+    path.join(basename, filename)
+  )
 }
 
 function bundle () {

@@ -31,9 +31,7 @@ function createWrapExecute (tracer, config, defaultFieldResolver) {
 
       const span = startExecutionSpan(tracer, config, operation, args)
 
-      Object.defineProperty(contextValue, '_datadog_graphql', {
-        value: { source, span, fields: {} }
-      })
+      contextValue._datadog_graphql = { source, span, fields: {} }
 
       return call(execute, span, this, [args], (err, res) => {
         finishResolvers(contextValue)
@@ -56,11 +54,9 @@ function createWrapParse (tracer, config) {
 
         if (!operation) return document // skip schema parsing
 
-        Object.defineProperties(document, {
-          _datadog_source: {
-            value: source.body || source
-          }
-        })
+        if (source) {
+          document._datadog_source = source.body || source
+        }
 
         addDocumentTags(span, document)
 
@@ -85,7 +81,7 @@ function createWrapValidate (tracer, config) {
       try {
         const errors = validate.apply(this, arguments)
 
-        error = errors[0]
+        error = errors && errors[0]
 
         return errors
       } catch (e) {
@@ -113,18 +109,27 @@ function wrapFields (type, tracer, config) {
   Object.keys(type._fields).forEach(key => {
     const field = type._fields[key]
 
-    if (typeof field.resolve === 'function') {
-      field.resolve = wrapResolve(field.resolve, tracer, config)
-    }
-
-    let unwrappedType = field.type
-
-    while (unwrappedType.ofType) {
-      unwrappedType = unwrappedType.ofType
-    }
-
-    wrapFields(unwrappedType, tracer, config)
+    wrapFieldResolve(field, tracer, config)
+    wrapFieldType(field, tracer, config)
   })
+}
+
+function wrapFieldResolve (field, tracer, config) {
+  if (!field || !field.resolve) return
+
+  field.resolve = wrapResolve(field.resolve, tracer, config)
+}
+
+function wrapFieldType (field, tracer, config) {
+  if (!field || !field.type) return
+
+  let unwrappedType = field.type
+
+  while (unwrappedType.ofType) {
+    unwrappedType = unwrappedType.ofType
+  }
+
+  wrapFields(unwrappedType, tracer, config)
 }
 
 function wrapResolve (resolve, tracer, config) {
@@ -135,7 +140,9 @@ function wrapResolve (resolve, tracer, config) {
     : pathToArray
 
   function resolveWithTrace (source, args, contextValue, info) {
-    const path = responsePathAsArray(info.path)
+    if (!contextValue._datadog_graphql) return resolve.apply(this, arguments)
+
+    const path = responsePathAsArray(info && info.path)
     const depth = path.filter(item => typeof item === 'string').length
 
     if (config.depth >= 0 && config.depth < depth) {
@@ -373,14 +380,15 @@ function getOperation (document, operationName) {
     return
   }
 
+  const definitions = document.definitions.filter(def => def)
   const types = ['query', 'mutation', 'subscription']
 
   if (operationName) {
-    return document.definitions
+    return definitions
       .filter(def => types.indexOf(def.operation) !== -1)
       .find(def => operationName === (def.name && def.name.value))
   } else {
-    return document.definitions.find(def => types.indexOf(def.operation) !== -1)
+    return definitions.find(def => types.indexOf(def.operation) !== -1)
   }
 }
 
