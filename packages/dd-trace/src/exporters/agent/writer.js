@@ -6,6 +6,7 @@ const encode = require('../../encode')
 const tracerVersion = require('../../../lib/version')
 
 const MAX_SIZE = 8 * 1024 * 1024 // 8MB
+const METRIC_PREFIX = 'datadog.tracer.node.exporter.agent'
 
 class Writer {
   constructor (url, prioritySampler) {
@@ -70,7 +71,21 @@ class Writer {
 
     log.debug(() => `Request to the agent: ${JSON.stringify(options)}`)
 
-    platform.request(Object.assign({ data }, options), (err, res) => {
+    platform.metrics().increment(`${METRIC_PREFIX}.requests`, true)
+
+    platform.request(Object.assign({ data }, options), (err, res, status) => {
+      if (status) {
+        platform.metrics().increment(`${METRIC_PREFIX}.responses`, true)
+        platform.metrics().increment(`${METRIC_PREFIX}.responses.by.status`, `status:${status}`, true)
+      } else if (err) {
+        platform.metrics().increment(`${METRIC_PREFIX}.errors`, true)
+        platform.metrics().increment(`${METRIC_PREFIX}.errors.by.name`, `name:${err.name}`, true)
+
+        if (err.code) {
+          platform.metrics().increment(`${METRIC_PREFIX}.errors.by.code`, `code:${err.code}`, true)
+        }
+      }
+
       if (err) return log.error(err)
 
       log.debug(`Response from the agent: ${res}`)
@@ -79,6 +94,9 @@ class Writer {
         this._prioritySampler.update(JSON.parse(res).rate_by_service)
       } catch (e) {
         log.error(e)
+
+        platform.metrics().increment(`${METRIC_PREFIX}.errors`, true)
+        platform.metrics().increment(`${METRIC_PREFIX}.errors.by.name`, `name:${e.name}`, true)
       }
     })
   }

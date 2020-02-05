@@ -5,6 +5,9 @@ const platform = require('./platform')
 const coalesce = require('koalas')
 const scopes = require('../../../ext/scopes')
 const tagger = require('./tagger')
+const id = require('./id')
+
+const runtimeId = `${id().toString()}${id().toString()}`
 
 class Config {
   constructor (service, options) {
@@ -41,6 +44,13 @@ class Config {
     tagger.add(tags, platform.env('DD_TRACE_GLOBAL_TAGS'))
     tagger.add(tags, options.tags)
 
+    const sampler = (options.experimental && options.experimental.sampler) || {}
+
+    Object.assign(sampler, {
+      sampleRate: coalesce(sampler.sampleRate, platform.env('DD_TRACE_SAMPLE_RATE')),
+      rateLimit: coalesce(sampler.rateLimit, platform.env('DD_TRACE_RATE_LIMIT'))
+    })
+
     this.enabled = String(enabled) === 'true'
     this.debug = String(debug) === 'true'
     this.logInjection = String(logInjection) === 'true'
@@ -62,9 +72,10 @@ class Config {
     this.trackAsyncScope = options.trackAsyncScope !== false
     this.experimental = {
       b3: !(!options.experimental || !options.experimental.b3),
+      runtimeId: !(!options.experimental || !options.experimental.runtimeId),
       exporter: options.experimental && options.experimental.exporter,
       peers: (options.experimental && options.experimental.peers) || [],
-      sampler: (options.experimental && options.experimental.sampler) || {}
+      sampler
     }
     this.reportHostname = String(reportHostname) === 'true'
     this.scope = platform.env('DD_CONTEXT_PROPAGATION') === 'false' ? scopes.NOOP : scope
@@ -74,6 +85,12 @@ class Config {
       platform.env('DD_TRACE_LOG_LEVEL'),
       'debug'
     )
+
+    if (this.experimental.runtimeId) {
+      tagger.add(tags, {
+        'runtime-id': runtimeId
+      })
+    }
   }
 }
 

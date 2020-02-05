@@ -4,8 +4,11 @@ const Tags = require('opentracing').Tags
 const analyticsSampler = require('../../dd-trace/src/analytics_sampler')
 
 function createWrapRequest (tracer, config) {
+  config = normalizeConfig(config)
   return function wrapRequest (request) {
     return function requestWithTrace (params, options, cb) {
+      if (!params) return request.apply(this, arguments)
+
       const childOf = tracer.scope().active()
       const span = tracer.startSpan('elasticsearch.query', {
         childOf,
@@ -34,14 +37,18 @@ function createWrapRequest (tracer, config) {
       return tracer.scope().activate(span, () => {
         if (typeof cb === 'function') {
           if (request.length === 2) {
-            return request.call(this, params, wrapCallback(tracer, span, cb))
+            return request.call(this, params, wrapCallback(tracer, span, params, config, cb))
           } else {
-            return request.call(this, params, options, wrapCallback(tracer, span, cb))
+            return request.call(this, params, options, wrapCallback(tracer, span, params, config, cb))
           }
         } else {
           const promise = request.apply(this, arguments)
 
-          promise.then(() => finish(span), e => finish(span, e))
+          if (promise && typeof promise.then === 'function') {
+            promise.then(() => finish(span, params, config), e => finish(span, params, config, e))
+          } else {
+            finish(span, params, config)
+          }
 
           return promise
         }
@@ -50,14 +57,14 @@ function createWrapRequest (tracer, config) {
   }
 }
 
-function wrapCallback (tracer, span, done) {
+function wrapCallback (tracer, span, params, config, done) {
   return function (err) {
-    finish(span, err)
+    finish(span, params, config, err)
     done.apply(null, arguments)
   }
 }
 
-function finish (span, err) {
+function finish (span, params, config, err) {
   if (err) {
     span.addTags({
       'error.type': err.name,
@@ -66,11 +73,28 @@ function finish (span, err) {
     })
   }
 
+  config.hooks.query(span, params)
+
   span.finish()
 }
 
 function quantizePath (path) {
-  return path.replace(/[0-9]+/g, '?')
+  return path && path.replace(/[0-9]+/g, '?')
+}
+
+function normalizeConfig (config) {
+  const hooks = getHooks(config)
+
+  return Object.assign({}, config, {
+    hooks
+  })
+}
+
+function getHooks (config) {
+  const noop = () => {}
+  const query = (config.hooks && config.hooks.query) || noop
+
+  return { query }
 }
 
 module.exports = [

@@ -16,7 +16,13 @@ module.exports = function () {
       }
     },
 
+    boolean () {},
+
+    histogram () {},
+
     count () {},
+
+    gauge () {},
 
     increment () {},
 

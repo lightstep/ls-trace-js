@@ -2,7 +2,6 @@
 
 const opentracing = require('opentracing')
 const Span = opentracing.Span
-const truncate = require('lodash.truncate')
 const SpanContext = require('./span_context')
 const platform = require('../platform')
 const constants = require('../constants')
@@ -18,10 +17,9 @@ class DatadogSpan extends Span {
     const startTime = fields.startTime || platform.now()
     const operationName = fields.operationName
     const parent = fields.parent || null
-    const tags = Object.assign({}, fields.tags)
-    const metrics = {
+    const tags = Object.assign({
       [SAMPLE_RATE_METRIC_KEY]: sampler.rate()
-    }
+    }, fields.tags)
     const hostname = fields.hostname
 
     this._parentTracer = tracer
@@ -33,7 +31,6 @@ class DatadogSpan extends Span {
     this._spanContext = this._createContext(parent)
     this._spanContext._name = operationName
     this._spanContext._tags = tags
-    this._spanContext._metrics = metrics
     this._spanContext._hostname = hostname
 
     this._handle = platform.metrics().track(this)
@@ -41,13 +38,17 @@ class DatadogSpan extends Span {
 
   toString () {
     const spanContext = this.context()
+    const resourceName = spanContext._tags['resource.name']
+    const resource = resourceName.length > 100
+      ? `${resourceName.substring(0, 97)}...`
+      : resourceName
     const json = JSON.stringify({
       traceId: spanContext._traceId,
       spanId: spanContext._spanId,
       parentId: spanContext._parentId,
       service: spanContext._tags['service.name'],
       name: spanContext._name,
-      resource: truncate(spanContext._tags['resource.name'], { length: 100 })
+      resource
     })
 
     return `Span${json}`

@@ -13,8 +13,9 @@ describe('Plugin', () => {
   let port
   let server
   let tracer
+  let loader
 
-  function buildClient (service) {
+  function buildClient (service, ClientService) {
     service = Object.assign({
       getBidi: () => {},
       getServerStream: () => {},
@@ -22,7 +23,8 @@ describe('Plugin', () => {
       getUnary: () => {}
     }, service)
 
-    const loader = require('../../../versions/@grpc/proto-loader').get()
+    loader = require('../../../versions/@grpc/proto-loader').get()
+
     const definition = loader.loadSync(`${__dirname}/test.proto`)
     const TestService = grpc.loadPackageDefinition(definition).test.TestService
 
@@ -32,7 +34,9 @@ describe('Plugin', () => {
     server.addService(TestService.service, service)
     server.start()
 
-    return new TestService(`localhost:${port}`, grpc.credentials.createInsecure())
+    ClientService = ClientService || TestService
+
+    return new ClientService(`localhost:${port}`, grpc.credentials.createInsecure())
   }
 
   describe('grpc/client', () => {
@@ -77,10 +81,13 @@ describe('Plugin', () => {
                   'grpc.method.package': 'test',
                   'grpc.method.path': '/test.TestService/getUnary',
                   'grpc.method.kind': kinds.unary,
-                  'grpc.status.code': '0',
                   'span.kind': 'client',
                   'component': 'grpc'
                 }
+              })
+
+              expect(traces[0][0].metrics).to.include({
+                'grpc.status.code': 0
               })
             })
             .then(done)
@@ -108,10 +115,13 @@ describe('Plugin', () => {
                   'grpc.method.package': 'test',
                   'grpc.method.path': '/test.TestService/getServerStream',
                   'grpc.method.kind': kinds.server_stream,
-                  'grpc.status.code': '0',
                   'span.kind': 'client',
                   'component': 'grpc'
                 }
+              })
+
+              expect(traces[0][0].metrics).to.include({
+                'grpc.status.code': 0
               })
             })
             .then(done)
@@ -141,10 +151,13 @@ describe('Plugin', () => {
                   'grpc.method.package': 'test',
                   'grpc.method.path': '/test.TestService/getClientStream',
                   'grpc.method.kind': kinds.client_stream,
-                  'grpc.status.code': '0',
                   'span.kind': 'client',
                   'component': 'grpc'
                 }
+              })
+
+              expect(traces[0][0].metrics).to.include({
+                'grpc.status.code': 0
               })
             })
             .then(done)
@@ -169,8 +182,8 @@ describe('Plugin', () => {
               expect(traces[0][0].meta).to.have.property('grpc.method.service', 'TestService')
               expect(traces[0][0].meta).to.have.property('grpc.method.path', '/test.TestService/get_Bidi')
               expect(traces[0][0].meta).to.have.property('grpc.method.kind', kinds.bidi)
-              expect(traces[0][0].meta).to.have.property('grpc.status.code', '0')
               expect(traces[0][0].meta).to.have.property('span.kind', 'client')
+              expect(traces[0][0].metrics).to.have.property('grpc.status.code', 0)
             })
             .then(done)
             .catch(done)
@@ -188,7 +201,7 @@ describe('Plugin', () => {
 
           agent
             .use(traces => {
-              expect(traces[0][0].meta).to.have.property('grpc.status.code', '1')
+              expect(traces[0][0].metrics).to.have.property('grpc.status.code', 1)
             })
             .then(done)
             .catch(done)
@@ -204,7 +217,7 @@ describe('Plugin', () => {
 
           agent
             .use(traces => {
-              expect(traces[0][0].meta).to.have.property('grpc.status.code', '1')
+              expect(traces[0][0].metrics).to.have.property('grpc.status.code', 1)
             })
             .then(done)
             .catch(done)
@@ -222,7 +235,7 @@ describe('Plugin', () => {
 
           agent
             .use(traces => {
-              expect(traces[0][0].meta).to.have.property('grpc.status.code', '1')
+              expect(traces[0][0].metrics).to.have.property('grpc.status.code', 1)
             })
             .then(done)
             .catch(done)
@@ -248,11 +261,41 @@ describe('Plugin', () => {
                 'grpc.method.package': 'test',
                 'grpc.method.path': '/test.TestService/getUnary',
                 'grpc.method.kind': kinds.unary,
-                'grpc.status.code': '2',
                 'span.kind': 'client',
                 'component': 'grpc'
               })
               expect(traces[0][0].meta).to.have.property('error.stack')
+              expect(traces[0][0].metrics).to.have.property('grpc.status.code', 2)
+            })
+            .then(done)
+            .catch(done)
+
+          client.getUnary({ first: 'foobar' }, () => {})
+        })
+
+        it('should handle protocol errors', done => {
+          const definition = loader.loadSync(`${__dirname}/invalid.proto`)
+          const test = grpc.loadPackageDefinition(definition).test
+          const client = buildClient({
+            getUnary: (_, callback) => callback(null)
+          }, test.TestService)
+
+          agent
+            .use(traces => {
+              expect(traces[0][0]).to.have.property('error', 1)
+              expect(traces[0][0].meta).to.include({
+                'error.msg': '13 INTERNAL: Failed to parse server response',
+                'error.type': 'Error',
+                'grpc.method.name': 'getUnary',
+                'grpc.method.service': 'TestService',
+                'grpc.method.package': 'test',
+                'grpc.method.path': '/test.TestService/getUnary',
+                'grpc.method.kind': kinds.unary,
+                'span.kind': 'client',
+                'component': 'grpc'
+              })
+              expect(traces[0][0].meta).to.have.property('error.stack')
+              expect(traces[0][0].metrics).to.have.property('grpc.status.code', 13)
             })
             .then(done)
             .catch(done)
@@ -277,10 +320,13 @@ describe('Plugin', () => {
                   'grpc.method.package': 'test',
                   'grpc.method.path': '/test.TestService/getUnary',
                   'grpc.method.kind': kinds.unary,
-                  'grpc.status.code': '0',
                   'span.kind': 'client',
                   'component': 'grpc'
                 }
+              })
+
+              expect(traces[0][0].metrics).to.deep.include({
+                'grpc.status.code': 0
               })
             })
             .then(done)
@@ -512,8 +558,11 @@ describe('Plugin', () => {
                 'grpc.method.path': '/test.TestService/getUnary',
                 'grpc.method.kind': 'unary',
                 'grpc.response.metadata.foo': 'bar',
-                'grpc.status.code': '0',
                 'span.kind': 'client'
+              })
+
+              expect(traces[0][0].metrics).to.deep.include({
+                'grpc.status.code': 0
               })
             })
             .then(done)

@@ -1,16 +1,14 @@
 Component,Origin,License,Copyright
 require,@types/node,MIT,Copyright Authors
-require,bowser,MIT,Copyright 2015 Dustin Diaz
 require,container-info,MIT,Copyright 2018 Stephen Belanger
-require,core-js,MIT,Copyright 2014-2019 Denis Pushkarev
+require,core-js,MIT,Copyright 2014-2020 Denis Pushkarev
+require,hdr-histogram-js,BSD-2-Clause,Copyright 2016 Alexandre Victoor
 require,int64-buffer,MIT,Copyright 2015-2016 Yusuke Kawasaki
 require,koalas,MIT,Copyright 2013-2017 Brian Woodward
 require,limiter,MIT,Copyright 2011 John Hurliman
 require,lodash.kebabcase,MIT,Copyright JS Foundation and other contributors
-require,lodash.memoize,MIT,Copyright JS Foundation and other contributors
 require,lodash.pick,MIT,Copyright JS Foundation and other contributors
 require,lodash.sortby,MIT,Copyright JS Foundation and other contributors
-require,lodash.truncate,MIT,Copyright JS Foundation and other contributors
 require,lodash.uniq,MIT,Copyright JS Foundation and other contributors
 require,methods,MIT,Copyright 2013-2014 TJ Holowaychuk
 require,module-details-from-path,MIT,Copyright 2016 Thomas Watson Steen
@@ -27,7 +25,6 @@ require,shimmer,BSD-2-Clause,Copyright Forrest L Norvell
 require,tar,ISC,Copyright Isaac Z. Schlueter and Contributors
 require,url-parse,MIT,Copyright 2015 Unshift.io Arnout Kazemier the Contributors
 require,whatwg-fetch,MIT,Copyright 2014-2016 GitHub Inc.
-require,zone.js,MIT,Copyright 2010-2019 Google LLC.
 dev,@babel/core,MIT,Copyright 2014-present Sebastian McKenzie and other contributors
 dev,@babel/preset-env,MIT,Copyright 2014-present Sebastian McKenzie and other contributors
 dev,axios,MIT,Copyright 2014-present Matt Zabriskie
@@ -35,6 +32,7 @@ dev,babel-loader,MIT,Copyright 2014-2019 Luís Couto
 dev,benchmark,MIT,Copyright 2010-2016 Mathias Bynens Robert Kieffer John-David Dalton
 dev,body-parser,MIT,Copyright 2014 Jonathan Ong 2014-2015 Douglas Christopher Wilson
 dev,chai,MIT,Copyright 2017 Chai.js Assertion Library
+dev,checksum,MIT,Copyright Daniel D. Shaw
 dev,codecov,MIT,Copyright 2014 Gregg Caines
 dev,eslint,MIT,Copyright JS Foundation and other contributors https://js.foundation
 dev,eslint-config-standard,MIT,Copyright Feross Aboukhadijeh
@@ -45,6 +43,7 @@ dev,eslint-plugin-standard,MIT,Copyright 2015 Jamund Ferguson
 dev,eventemitter3,MIT,Copyright 2014 Arnout Kazemier
 dev,express,MIT,Copyright 2009-2014 TJ Holowaychuk 2013-2014 Roman Shtylman 2014-2015 Douglas Christopher Wilson
 dev,get-port,MIT,Copyright Sindre Sorhus
+dev,glob,ISC,Copyright Isaac Z. Schlueter and Contributors
 dev,graphql,MIT,Copyright 2015 Facebook Inc.
 dev,karma,MIT,Copyright 2011-2019 Google, Inc.
 dev,karma-browserstack-launcher,MIT,Copyright 2011-2013 Google, Inc.
@@ -58,6 +57,7 @@ dev,nock,MIT,Copyright 2017 Pedro Teixeira and other contributors
 dev,nyc,ISC,Copyright 2015 Contributors
 dev,proxyquire,MIT,Copyright 2013 Thorsten Lorenz
 dev,retry,MIT,Copyright 2011 Tim Koschützki Felix Geisendörfer
+dev,rimraf,ISC,Copyright Isaac Z. Schlueter and Contributors
 dev,semver,ISC,Copyright Isaac Z. Schlueter and Contributors
 dev,sinon,BSD-3-Clause,Copyright 2010-2017 Christian Johansen
 dev,sinon-chai,WTFPL and BSD-2-Clause,Copyright 2004 Sam Hocevar 2012–2017 Domenic Denicola

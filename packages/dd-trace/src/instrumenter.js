@@ -8,6 +8,12 @@ shimmer({ logger: () => {} })
 
 const plugins = platform.plugins
 
+const disabldPlugins = platform.env('DD_TRACE_DISABLED_PLUGINS')
+
+const collectDisabledPlugins = () => {
+  return new Set(disabldPlugins && disabldPlugins.split(',').map(plugin => plugin.trim()))
+}
+
 class Instrumenter {
   constructor (tracer) {
     this._tracer = tracer
@@ -16,6 +22,7 @@ class Instrumenter {
     this._names = new Set()
     this._plugins = new Map()
     this._instrumented = new Map()
+    this._disabledPlugins = collectDisabledPlugins()
   }
 
   use (name, config) {
@@ -39,6 +46,8 @@ class Instrumenter {
   enable (config) {
     config = config || {}
 
+    this._enabled = true
+
     if (config.plugins !== false) {
       Object.keys(plugins)
         .filter(name => !this._plugins.has(plugins[name]))
@@ -47,7 +56,6 @@ class Instrumenter {
         })
     }
 
-    this._enabled = true
     this._loader.reload(this._plugins)
   }
 
@@ -98,6 +106,9 @@ class Instrumenter {
     if (!this._enabled) return
 
     const instrumentations = [].concat(plugin)
+    const enabled = meta.config.enabled !== false
+
+    platform.metrics().boolean(`datadog.tracer.node.plugin.enabled.by.name`, enabled, `name:${meta.name}`)
 
     try {
       instrumentations
@@ -108,6 +119,8 @@ class Instrumenter {
       log.error(e)
       this.unload(plugin)
       log.debug(`Error while trying to patch ${meta.name}. The plugin has been disabled.`)
+
+      platform.metrics().increment(`datadog.tracer.node.plugin.errors`, true)
     }
   }
 
@@ -118,7 +131,13 @@ class Instrumenter {
         this._instrumented.delete(instrumentation)
       })
 
-    this._plugins.delete(plugin)
+    const meta = this._plugins.get(plugin)
+
+    if (meta) {
+      this._plugins.delete(plugin)
+
+      platform.metrics().boolean(`datadog.tracer.node.plugin.enabled.by.name`, false, `name:${meta.name}`)
+    }
   }
 
   patch (instrumentation, moduleExports, config) {
@@ -149,8 +168,12 @@ class Instrumenter {
   }
 
   _set (plugin, meta) {
-    this._plugins.set(plugin, meta)
-    this.load(plugin, meta)
+    if (this._disabledPlugins.has(meta.name)) {
+      log.debug(`Plugin "${meta.name}" was disabled via configuration option.`)
+    } else {
+      this._plugins.set(plugin, meta)
+      this.load(plugin, meta)
+    }
   }
 }
 

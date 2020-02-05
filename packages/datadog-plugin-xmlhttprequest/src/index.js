@@ -1,7 +1,9 @@
 'use strict'
 
+const URL = require('url-parse')
 const { Reference, REFERENCE_CHILD_OF } = require('opentracing')
 const { REFERENCE_NOOP } = require('../../dd-trace/src/constants')
+const tx = require('../../dd-trace/src/plugins/util/http')
 
 function createWrapOpen (tracer) {
   return function wrapOpen (open) {
@@ -19,11 +21,11 @@ function createWrapSend (tracer, config) {
     return function sendWithTrace (body) {
       const service = config.service || `${tracer._service}-http-client`
       const method = this._datadog_method
-      const url = this._datadog_url.href
+      const url = this._datadog_url
       const scope = tracer.scope()
       const childOf = scope.active()
       const type = isFlush(tracer._url.href, url) ? REFERENCE_NOOP : REFERENCE_CHILD_OF
-      const span = tracer.startSpan('http.request', {
+      const span = tracer.startSpan('browser.request', {
         references: [
           new Reference(type, childOf)
         ],
@@ -33,12 +35,12 @@ function createWrapSend (tracer, config) {
           'resource.name': method,
           'span.type': 'http',
           'http.method': method,
-          'http.url': url
+          'http.url': url.href
         }
       })
 
       // HACK: move to backend
-      span.context()._metrics._top_level = 1
+      span.setTag('_top_level', 1)
 
       if (type === REFERENCE_CHILD_OF) {
         inject(this, tracer, span)
@@ -48,7 +50,14 @@ function createWrapSend (tracer, config) {
       this.addEventListener('load', () => span.setTag('http.status', this.status))
       this.addEventListener('loadend', () => span.finish())
 
-      return tracer.scope().bind(send, span).apply(this, arguments)
+      try {
+        return tracer.scope().bind(send, span).apply(this, arguments)
+      } catch (e) {
+        span.setTag('error', e)
+        span.finish()
+
+        throw e
+      }
     }
   }
 }
@@ -59,7 +68,7 @@ function inject (xhr, tracer, span) {
   const origin = xhr._datadog_url.origin
   const peers = tracer._peers
 
-  if (origin !== window.location.origin && peers.indexOf(origin) === -1) return
+  if (origin !== window.location.origin && !tx.isPeer(origin, peers)) return
 
   tracer.inject(span, format, headers)
 
@@ -68,8 +77,11 @@ function inject (xhr, tracer, span) {
   }
 }
 
+// TODO: support staging and other environments
 function isFlush (href, url) {
-  return (new RegExp(`^${href}/v1/input/[a-z0-9]+$`, 'i')).test(url.href)
+  return (new RegExp(`^${href}/v1/input/[a-z0-9]+$`, 'i')).test(url.href) ||
+    url.href.startsWith('https://rum-http-intake.logs.datadoghq.com') ||
+    url.href.startsWith('https://browser-http-intake.logs.datadoghq.com')
 }
 
 module.exports = {

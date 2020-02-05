@@ -3,10 +3,10 @@ syntax = "proto3";
 package test;
 
 service TestService {
-  rpc get_Bidi (stream Request) returns (stream Empty) {} // test rename support
-  rpc getServerStream (Request) returns (stream Empty) {}
-  rpc getClientStream (stream Request) returns (Empty) {}
-  rpc getUnary (Request) returns (Empty) {}
+  rpc get_Bidi (stream Request) returns (stream Response) {} // test rename support
+  rpc getServerStream (Request) returns (stream Response) {}
+  rpc getClientStream (stream Request) returns (Response) {}
+  rpc getUnary (Request) returns (Response) {}
 }
 
 message Request {
@@ -14,5 +14,4 @@ message Request {
   int32 second = 2;
 }
 
-message Empty {
-}
+message Response {}

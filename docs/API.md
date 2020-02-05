@@ -216,7 +216,9 @@ tracer.use('pg', {
 <h5 id="express-tags"></h5>
 <h5 id="express-config"></h5>
 <h5 id="generic-pool"></h5>
+<h5 id="google-cloud-pubsub"></h5>
 <h5 id="fastify"></h5>
+<h5 id="fs"></h5>
 <h5 id="graphql"></h5>
 <h5 id="graphql-tags"></h5>
 <h5 id="graphql-config"></h5>
@@ -276,7 +278,9 @@ tracer.use('pg', {
 * [elasticsearch](./interfaces/plugins.elasticsearch.html)
 * [express](./interfaces/plugins.express.html)
 * [fastify](./interfaces/plugins.fastify.html)
+* [fs](./interfaces/plugins.fs.html)
 * [generic-pool](./interfaces/plugins.generic_pool.html)
+* [google-cloud-pubsub](./interfaces/plugins.google_cloud_pubsub.html)
 * [graphql](./interfaces/plugins.graphql.html)
 * [grpc](./interfaces/plugins.grpc.html)
 * [hapi](./interfaces/plugins.hapi.html)
@@ -328,6 +332,7 @@ Options can be configured as a parameter to the [init()](./interfaces/tracer.htm
 | reportHostname | `DD_TRACE_REPORT_HOSTNAME`     | `false`     | Whether to report the system's hostname for each trace. When disabled, the hostname of the agent will be used instead. |
 | experimental   | -                              | `{}`        | Experimental features can be enabled all at once using boolean `true` or individually using key/value pairs. Please contact us to learn more about the available experimental features. |
 | plugins        | -                              | `true`      | Whether or not to enable automatic instrumentation of external libraries using the built-in plugins. |
+| -              | `DD_TRACE_DISABLED_PLUGINS`    | -           | A comma-separated string of integration names automatically disabled when tracer is initialized. Environment variable only e.g. `DD_TRACE_DISABLED_PLUGINS=express,dns`. |
 | clientToken    | `DD_CLIENT_TOKEN`              | -           | Client token for browser tracing. Can be generated in the UI at `Integrations -> APIs`. |
 | logLevel       | `DD_TRACE_LOG_LEVEL`           | `debug`     | A string for the minimum log level for the tracer to use when debug logging is enabled, e.g. `'error'`, `'debug'`. |
 

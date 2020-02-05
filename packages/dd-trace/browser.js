@@ -1,7 +1,9 @@
 'use strict'
 
-require('whatwg-fetch')
-require('core-js/stable')
+require('core-js/stable/object/assign') // TODO: remove dependency
+require('core-js/stable/set') // TODO: remove dependency
+require('core-js/stable/map') // TODO: remove dependency
+require('core-js/stable/typed-array') // TODO: remove dependency
 
 const platform = require('./src/platform')
 const browser = require('./src/platform/browser')

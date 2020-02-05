@@ -13,9 +13,9 @@ const cwd = path.join(__dirname, '..')
 const buildFromSource = process.env.npm_config_build_from_source
 const platforms = [
   'linux-x64',
-  'linux-x32',
+  'linux-ia32',
   'darwin-x64',
-  'darwin-x32',
+  'darwin-ia32',
   'win32-x64',
   'win32-ia32'
 ]
@@ -50,7 +50,7 @@ function extract () {
   console.log('Extracting prebuilt binaries.')
 
   const promise = tar.extract({
-    file: `addons-${name}.tgz`,
+    file: `prebuilds.tgz`,
     cwd: path.join(__dirname, '..')
   })
 
@@ -62,13 +62,9 @@ function extract () {
 }
 
 function cleanup () {
-  platforms
-    .map(name => path.join(cwd, `addons-${name}.tgz`))
-    .forEach(file => {
-      try {
-        fs.unlinkSync(file)
-      } catch (e) {
-        // Ignore as it's just to save space
-      }
-    })
+  try {
+    fs.unlinkSync(path.join(cwd, `prebuilds.tgz`))
+  } catch (e) {
+    // Ignore as it's just to save space
+  }
 }
