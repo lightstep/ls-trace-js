@@ -36,12 +36,14 @@ const web = {
     const validateStatus = getStatusValidator(config)
     const hooks = getHooks(config)
     const filter = urlFilter.getFilter(config)
+    const middleware = getMiddlewareSetting(config)
 
     return Object.assign({}, config, {
       headers,
       validateStatus,
       hooks,
-      filter
+      filter,
+      middleware
     })
   },
 
@@ -86,8 +88,10 @@ const web = {
   },
 
   // Start a new middleware span and activate a new scope with the span.
-  wrapMiddleware (req, middleware, name, fn) {
+  wrapMiddleware (req, middleware, config, name, fn) {
     if (!this.active(req)) return fn()
+
+    if (config && config.middleware === false) return this.reactivateAndWrapMiddlewareErrors(fn, req)
 
     const tracer = req._datadog.tracer
     const childOf = this.active(req)
@@ -100,6 +104,24 @@ const web = {
     req._datadog.middleware.push(span)
 
     return tracer.scope().activate(span, fn)
+  },
+
+  // catch errors and apply to active span
+  reactivateAndWrapMiddlewareErrors (fn, req) {
+    try {
+      return this.reactivate(req, fn)
+    } catch (e) {
+      const activeSpan = this.active(req)
+      if (activeSpan) {
+        activeSpan.addTags({
+          'error.type': e.name,
+          'error.msg': e.message,
+          'error.stack': e.stack
+        })
+      }
+
+      throw (e)
+    }
   },
 
   // Finish the active middleware span.
@@ -423,6 +445,16 @@ function getHooks (config) {
   const request = (config.hooks && config.hooks.request) || noop
 
   return { request }
+}
+
+function getMiddlewareSetting (config) {
+  if (config && typeof config.middleware === 'boolean') {
+    return config.middleware
+  } else if (config && config.hasOwnProperty('middleware')) {
+    log.error('Expected `middleware` to be a boolean.')
+  }
+
+  return true
 }
 
 module.exports = web
