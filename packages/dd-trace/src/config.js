@@ -88,7 +88,7 @@ class Config {
       'debug'
     )
 
-    this.reportingInterval = options.reportingInterval || 30 * 1000; // seconds
+    this.reportingInterval = options.reportingInterval || 30 * 1000 // seconds
 
     if (this.experimental.runtimeId) {
       tagger.add(tags, {

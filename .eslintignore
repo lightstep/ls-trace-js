@@ -1,6 +1,8 @@
 coverage
 dist
 docs
+generated_proto
 out
 node_modules
+testing
 versions
