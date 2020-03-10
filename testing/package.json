@@ -1,0 +1,10 @@
+{
+  "name": "test",
+  "version": "0.0.1",
+  "main": "test.js",
+  "private": true,
+  "dependencies": {
+    "express": "^4.16.2",
+    "systeminformation": "^4.22.5"
+  }
+}

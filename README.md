@@ -107,6 +107,17 @@ most efficient algorithm. To run your benchmark, just:
 $ yarn bench
 
 ```
+### Generating proto
+```sh
+make proto
+```
+
+if you don't have required packages
+```sh
+make clone
+```
+
+
 ## Versioning
 
 ls-trace follows its own versioning scheme. The table below shows the corresponding dd-trace-ls versions.

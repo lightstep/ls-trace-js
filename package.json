@@ -15,6 +15,7 @@
     "install": "node scripts/post_install.js",
     "install:rebuild": "node-gyp-build",
     "bench": "node benchmark",
+    "testing": "node testing/test.js",
     "type:doc": "cd docs && yarn && yarn build",
     "type:test": "cd docs && yarn && yarn test",
     "lint": "node scripts/check_licenses.js && eslint .",
@@ -53,6 +54,7 @@
     "@types/node": "^10.12.18",
     "container-info": "^1.0.1",
     "core-js": "^3.6.0",
+    "google-protobuf": "^3.11.4",
     "hdr-histogram-js": "^1.1.4",
     "int64-buffer": "^0.1.9",
     "koalas": "^1.0.2",
@@ -74,6 +76,7 @@
     "require-in-the-middle": "^2.2.2",
     "semver": "^5.5.0",
     "shimmer": "^1.2.0",
+    "systeminformation": "^4.22.5",
     "tar": "^4.4.8",
     "url-parse": "^1.4.3",
     "whatwg-fetch": "^3.0.0"
