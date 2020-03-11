@@ -11,6 +11,7 @@ const log = require('../../log')
 const Histogram = require('../../histogram')
 const si = require('systeminformation')
 
+const MICROSECOND = 1/1e6;
 let nativeMetrics = null
 
 let metrics
@@ -64,7 +65,7 @@ module.exports = function () {
 
       time = process.hrtime()
 
-      if (!nativeMetrics) {
+      if (nativeMetrics) {
         interval = setInterval(() => {
           Promise.all([
             captureNetworkMetrics(),
@@ -183,10 +184,10 @@ function captureCpuUsage () {
   time = process.hrtime()
   cpuUsage = process.cpuUsage()
 
-  client.increment('cpu.user', elapsedUsage.user)
-  client.increment('cpu.sys', elapsedUsage.system)
-  client.increment('cpu.usage', elapsedUsage.user + elapsedUsage.system)
-  client.increment('cpu.total', cpuUsage.user + cpuUsage.system)
+  client.increment('cpu.user', elapsedUsage.user * MICROSECOND)
+  client.increment('cpu.sys', elapsedUsage.system * MICROSECOND)
+  client.increment('cpu.usage', (elapsedUsage.user + elapsedUsage.system) * MICROSECOND)
+  client.increment('cpu.total', (cpuUsage.user + cpuUsage.system) * MICROSECOND)
   return Promise.resolve()
 }
 
@@ -326,10 +327,10 @@ function captureNativeMetrics () {
 
   const elapsedUs = elapsedTime[0] * 1e6 + elapsedTime[1] / 1e3
 
-  client.increment('cpu.user', stats.cpu.user)
-  client.increment('cpu.sys', stats.cpu.system)
-  client.increment('cpu.usage', stats.cpu.user + stats.cpu.system)
-  client.increment('cpu.total', elapsedUs)
+  client.increment('cpu.user', stats.cpu.user * MICROSECOND)
+  client.increment('cpu.sys', stats.cpu.system * MICROSECOND)
+  client.increment('cpu.usage', (stats.cpu.user + stats.cpu.system) * MICROSECOND)
+  client.increment('cpu.total', elapsedUs * MICROSECOND)
 
   histogram('runtime.node.event_loop.delay', stats.eventLoop)
 
