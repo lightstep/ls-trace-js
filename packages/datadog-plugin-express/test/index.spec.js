@@ -169,7 +169,7 @@ describe('Plugin', () => {
                 expect(spans[4]).to.have.property('name', 'express.middleware')
                 expect(spans[5].resource).to.match(/^bound\s.*$/)
                 expect(spans[5]).to.have.property('name', 'express.middleware')
-                expect(spans[6]).to.have.property('resource', '<anonymous>')
+                expect(spans[6]).to.have.property('resource', 'express.middleware')
                 expect(spans[6]).to.have.property('name', 'express.middleware')
               })
               .then(done)

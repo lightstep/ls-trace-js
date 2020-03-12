@@ -88,7 +88,7 @@ describe('Plugin', () => {
                 expect(spans[1]).to.have.property('resource', 'named')
                 expect(spans[1]).to.have.property('name', 'connect.middleware')
                 expect(spans[1].parent_id.toString()).to.equal(spans[0].trace_id.toString())
-                expect(spans[2]).to.have.property('resource', '<anonymous>')
+                expect(spans[2]).to.have.property('resource', 'connect.middleware')
                 expect(spans[2]).to.have.property('name', 'connect.middleware')
               })
               .then(done)

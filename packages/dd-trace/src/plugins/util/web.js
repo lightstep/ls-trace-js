@@ -98,7 +98,7 @@ const web = {
     const span = tracer.startSpan(name, { childOf })
 
     span.addTags({
-      [RESOURCE_NAME]: middleware._name || middleware.name || '<anonymous>'
+      [RESOURCE_NAME]: middleware._name || middleware.name || name
     })
 
     req._datadog.middleware.push(span)
