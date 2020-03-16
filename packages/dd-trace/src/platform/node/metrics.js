@@ -11,7 +11,7 @@ const log = require('../../log')
 const Histogram = require('../../histogram')
 const si = require('systeminformation')
 
-const MICROSECOND = 1/1e6;
+const MICROSECOND = 1 / 1e6
 let nativeMetrics = null
 
 let metrics
@@ -326,7 +326,6 @@ function captureNativeMetrics () {
   time = process.hrtime()
 
   const elapsedUs = elapsedTime[0] * 1e6 + elapsedTime[1] / 1e3
-
   client.increment('cpu.user', stats.cpu.user * MICROSECOND)
   client.increment('cpu.sys', stats.cpu.system * MICROSECOND)
   client.increment('cpu.usage', (stats.cpu.user + stats.cpu.system) * MICROSECOND)

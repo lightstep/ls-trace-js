@@ -71,9 +71,9 @@ class Client {
     }
     this._points = []
     const report = createProtoReport(points, this._componentName)
-    console.log('generated in', now() - this._lastTime, 'milliseconds')
+    // console.log('generated in', now() - this._lastTime, 'milliseconds')
     this._send(report, () => {
-      console.log('success')
+      // console.log('success')
     }, (error) => {
       // restore points to be sent with next cycle
       this._mergePoints = true
@@ -100,7 +100,7 @@ class Client {
     function retryRandomly (from, to) {
       const howMany = to - from
       const time = Math.floor((from + Math.random() * howMany) * 1000)
-      console.log('retrying -> ', retryCount, ` in ${time}ms`)
+      // console.log('retrying -> ', retryCount, ` in ${time}ms`)
       setTimeout(() => {
         self._send(buffer, onSuccess, onError, retryCount)
       }, time)
@@ -127,7 +127,7 @@ class Client {
       if (res.statusCode && res.statusCode < 300) {
         onSuccess()
       } else {
-        console.log('error', res.statusCode)
+        // console.log('error', res.statusCode)
         retry(res.statusCode)
       }
     })
@@ -234,7 +234,7 @@ function mergePoints (points) {
     }
   })
 
-  console.log('before:', points.length)
+  // console.log('before:', points.length)
   for (let i = points.length - 1; i > 0; i--) {
     const currentPoint = points[i]
     const previousPoint = points[i - 1]
@@ -243,7 +243,7 @@ function mergePoints (points) {
       points.splice(i, 1)
     }
   }
-  console.log('after:', points.length)
+  // console.log('after:', points.length)
   return points
 }
 

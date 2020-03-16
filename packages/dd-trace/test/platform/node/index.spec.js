@@ -669,7 +669,6 @@ describe('Platform', () => {
           clock.tick(10000)
 
           originalTimeout(function () {
-
             expect(client.increment).to.have.been.calledWith('cpu.user')
             expect(client.increment).to.have.been.calledWith('cpu.sys')
             expect(client.increment).to.have.been.calledWith('cpu.usage')
