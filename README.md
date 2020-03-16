@@ -136,3 +136,4 @@ This is a fork of [dd-trace-js][dd-trace-js repo] and retains the original Datad
 
 [dd-trace-js repo]: https://github.com/DataDog/dd-trace-js
 [license file]: https://github.com/lightstep/ls-trace-js/blob/master/LICENSE
+
