@@ -1,11 +1,8 @@
 'use strict'
 
-// TODO: capture every second and flush every 10 seconds
-
 const v8 = require('v8')
 const path = require('path')
 const os = require('os')
-// const Client = require('./dogstatsd');
 const ClientProto = require('./proto')
 const log = require('../../log')
 const Histogram = require('../../histogram')
@@ -65,8 +62,9 @@ module.exports = function () {
 
       time = process.hrtime()
 
+      let intervalCallback
       if (nativeMetrics) {
-        interval = setInterval(() => {
+        intervalCallback = function () {
           Promise.all([
             captureNetworkMetrics(),
             captureMemTotalMetrics(),
@@ -75,11 +73,10 @@ module.exports = function () {
           ]).then(() => {
             client.flush()
           })
-        }, this._config.reportingInterval)
+        }
       } else {
         cpuUsage = process.cpuUsage()
-
-        interval = setInterval(() => {
+        intervalCallback = function () {
           Promise.all([
             captureNetworkMetrics(),
             captureMemTotalMetrics(),
@@ -89,9 +86,10 @@ module.exports = function () {
           ]).then(() => {
             client.flush()
           })
-        }, this._config.reportingInterval)
+        }
       }
-
+      intervalCallback()
+      interval = setInterval(intervalCallback, this._config.reportingInterval)
       interval.unref()
     },
 

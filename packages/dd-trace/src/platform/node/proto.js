@@ -16,15 +16,15 @@ class Client {
     options = options || {}
     this._start = now()
     this._lastTime = this._start
-    this._parsedUrl = new Url(options.url || options.hostname)
+    this._url = options.metricsUrl || new Url(options.hostname)
 
-    if (options.url) {
-      this._host = this._parsedUrl.hostname
-      this._port = this._parsedUrl.port
-      this._path = this._parsedUrl.pathname
+    if (options.metricsUrl) {
+      this._host = this._url.hostname
+      this._port = this._url.port
+      this._path = this._url.pathname
     } else {
       this._host = options.hostname || 'localhost'
-      this._port = options.port || (this._parsedUrl.protocol === 'https' ? 443 : 80)
+      this._port = options.port || (this._url.protocol === 'https' ? 443 : 80)
       this._path = ''
     }
 
@@ -73,6 +73,11 @@ class Client {
     this._points = []
     const report = createProtoReport(points, this._componentName)
     log.debug('generated in', now() - this._lastTime, 'milliseconds')
+    if (!this._skipped) {
+      log.debug('skipping initial report to be able to calculate delta correctly')
+      this._skipped = true
+      return
+    }
     this._send(report, () => {
       log.debug('success')
     }, (error) => {
@@ -97,7 +102,7 @@ class Client {
         'Lightstep-Access-Token': this._clientToken
       }
     }
-    const request = this._parsedUrl.protocol === 'http:' ? http.request : https.request
+    const request = this._url.protocol === 'http:' ? http.request : https.request
 
     function retryRandomly (from, to) {
       const howMany = to - from

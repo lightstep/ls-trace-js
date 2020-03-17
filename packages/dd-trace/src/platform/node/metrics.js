@@ -1,7 +1,5 @@
 'use strict'
 
-// TODO: capture every second and flush every 10 seconds
-
 const v8 = require('v8')
 const path = require('path')
 const os = require('os')
