@@ -382,7 +382,8 @@ describe('Platform', () => {
           gauge: sinon.spy(),
           increment: sinon.spy(),
           histogram: sinon.spy(),
-          flush: sinon.spy()
+          flush: sinon.spy(),
+          _send: sinon.spy()
         }
         systemInformation = {
           mem: function () {
@@ -516,13 +517,31 @@ describe('Platform', () => {
       })
 
       describe('stop', () => {
-        it('should stop collecting metrics every 10 seconds', () => {
+        it('should stop collecting metrics every 10 seconds', (done) => {
           metrics.apply(platform).start()
           metrics.apply(platform).stop()
 
           clock.tick(10000)
 
-          expect(client.gauge).to.not.have.been.called
+          expect(client.gauge).to.have.been.called
+
+          originalTimeout(() => {
+            expect(client.flush).to.not.have.been.called
+            done()
+          }, 0)
+        })
+      })
+
+      describe('start - skip', () => {
+        it('should skip sending report for 1st time', (done) => {
+          metrics.apply(platform).start()
+          expect(client.gauge).to.have.been.called
+
+          originalTimeout(() => {
+            expect(client.flush).to.have.been.called
+            expect(client._send).to.not.have.been.called
+            done()
+          }, 0)
         })
       })
 
