@@ -1661,7 +1661,6 @@ describe('Plugin', () => {
           describe('close', () => {
             it('should be instrumented', (done) => {
               expectOneSpan(agent, done, {
-                name: 'parent',
                 resource: 'filehandle.close',
                 meta: {
                   'file.descriptor': filehandle.fd.toString()
