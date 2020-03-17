@@ -1,5 +1,6 @@
 'use strict'
 
+const coalesce = require('koalas')
 const EventEmitter = require('events')
 const crypto = require('./crypto')
 const now = require('./now')
@@ -9,6 +10,7 @@ const service = require('./service')
 const request = require('./request')
 const msgpack = require('./msgpack')
 const metrics = require('./metrics')
+const metricsLightStep = require('./metrics_lightstep')
 const plugins = require('../../plugins')
 const hostname = require('./hostname')
 const Loader = require('./loader')
@@ -17,6 +19,7 @@ const exporter = require('./exporter')
 
 const emitter = new EventEmitter()
 
+const useDDMetrics = coalesce(process.env['DD_METRICS_RUNTIME'], false)
 const platform = {
   _config: {},
   name: () => 'nodejs',
@@ -30,7 +33,7 @@ const platform = {
   service,
   request,
   msgpack,
-  metrics,
+  metrics: useDDMetrics ? metrics : metricsLightStep,
   plugins,
   hostname,
   on: emitter.on.bind(emitter),
