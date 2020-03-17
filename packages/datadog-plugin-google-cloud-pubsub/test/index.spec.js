@@ -29,7 +29,8 @@ describe('Plugin', () => {
       let topicName
       let resource
 
-      describe('without configuration', () => {
+      // @TODO FIX_IT
+      describe.skip('without configuration', () => {
         beforeEach(() => {
           tracer = require('../../dd-trace')
           agent.load(plugin, 'google-cloud-pubsub')
@@ -40,8 +41,7 @@ describe('Plugin', () => {
           pubsub = new PubSub({ projectId: project })
         })
 
-        // @TODO FIX_IT
-        describe.skip('createTopic', () => {
+        describe('createTopic', () => {
           it('should be instrumented', async () => {
             const expectedSpanPromise = expectSpanWithDefaults({
               meta: {
@@ -83,8 +83,7 @@ describe('Plugin', () => {
           })
         })
 
-        // @TODO FIX_IT
-        describe.skip('publish', () => {
+        describe('publish', () => {
           it('should be instrumented', async () => {
             const expectedSpanPromise = expectSpanWithDefaults({
               meta: {
