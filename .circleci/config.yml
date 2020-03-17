@@ -374,7 +374,7 @@ jobs:
         environment:
           - SERVICES=google-cloud-pubsub
           - PLUGINS=google-cloud-pubsub
-      - image: kinok/google-pubsub-emulator
+      - image: knarz/pubsub-emulator
 
   node-graphql:
     <<: *node-plugin-base
