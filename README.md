@@ -107,6 +107,17 @@ most efficient algorithm. To run your benchmark, just:
 $ yarn bench
 
 ```
+### Generating proto
+```sh
+make proto
+```
+
+if you don't have required packages
+```sh
+make clone
+```
+
+
 ## Versioning
 
 ls-trace follows its own versioning scheme. The table below shows the corresponding dd-trace-ls versions.
@@ -125,3 +136,4 @@ This is a fork of [dd-trace-js][dd-trace-js repo] and retains the original Datad
 
 [dd-trace-js repo]: https://github.com/DataDog/dd-trace-js
 [license file]: https://github.com/lightstep/ls-trace-js/blob/master/LICENSE
+

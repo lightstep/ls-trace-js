@@ -18,6 +18,7 @@ class Config {
     const logInjection = coalesce(options.logInjection, platform.env('DD_LOGS_INJECTION'), false)
     const env = coalesce(options.env, platform.env('DD_ENV'))
     const url = coalesce(options.url, platform.env('DD_TRACE_AGENT_URL'), platform.env('DD_TRACE_URL'), null)
+    const metricsUrl = coalesce(options.metricsUrl, platform.env('LIGHTSTEP_URL'), null)
     const hostname = coalesce(
       options.hostname,
       platform.env('DD_AGENT_HOST'),
@@ -37,6 +38,7 @@ class Config {
     const reportHostname = coalesce(options.reportHostname, platform.env('DD_TRACE_REPORT_HOSTNAME'), false)
     const scope = coalesce(options.scope, platform.env('DD_TRACE_SCOPE'))
     const clientToken = coalesce(options.clientToken, platform.env('DD_CLIENT_TOKEN'))
+    const componentName = coalesce(options.componentName, platform.env('LIGHTSTEP_COMPONENT_NAME'), null)
     const tags = {}
 
     tagger.add(tags, platform.env('DD_TAGS'))
@@ -56,6 +58,7 @@ class Config {
     this.logInjection = String(logInjection) === 'true'
     this.env = env
     this.url = url && new URL(url)
+    this.metricsUrl = (metricsUrl && new URL(metricsUrl)) || this.url
     this.hostname = hostname || (this.url && this.url.hostname)
     this.port = String(port || (this.url && this.url.port))
     this.flushInterval = flushInterval
@@ -80,11 +83,14 @@ class Config {
     this.reportHostname = String(reportHostname) === 'true'
     this.scope = platform.env('DD_CONTEXT_PROPAGATION') === 'false' ? scopes.NOOP : scope
     this.clientToken = clientToken
+    this.componentName = componentName
     this.logLevel = coalesce(
       options.logLevel,
       platform.env('DD_TRACE_LOG_LEVEL'),
       'debug'
     )
+
+    this.reportingInterval = options.reportingInterval || 30 * 1000 // seconds
 
     if (this.experimental.runtimeId) {
       tagger.add(tags, {
