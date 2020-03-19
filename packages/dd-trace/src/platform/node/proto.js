@@ -53,7 +53,7 @@ class Client {
     const point = {
       kind: 1,
       metricName: name,
-      start: this._start,
+      start: this._lastTime,
       duration: now() - this._lastTime,
       labels: tags,
       value
@@ -72,14 +72,15 @@ class Client {
     }
     this._points = []
     const report = createProtoReport(points, this._componentName)
-    log.debug('generated in', now() - this._lastTime, 'milliseconds')
+    log.debug('generated machine metrics report in', now() - this._lastTime, 'milliseconds')
     if (!this._skipped) {
-      log.debug('skipping initial report to be able to calculate delta correctly')
+      log.debug('skipping initial machine metrics report to be able to calculate delta correctly')
       this._skipped = true
       return
     }
+
     this._send(report, () => {
-      log.debug('success')
+      log.debug('successfully reported machine metrics')
     }, (error) => {
       log.error(error)
       // restore points to be sent with next cycle
