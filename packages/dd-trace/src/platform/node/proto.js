@@ -31,7 +31,7 @@ class Client {
     this._prefix = options.prefix || ''
     this._tags = options.tags || []
     this._clientToken = options.clientToken || ''
-    this._componentName = options.componentName || ''
+    this._componentName = options.service || ''
     this._points = []
   }
 
