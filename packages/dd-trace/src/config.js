@@ -19,7 +19,11 @@ class Config {
     const env = coalesce(options.env, platform.env('DD_ENV'))
     const url = coalesce(options.url, platform.env('DD_TRACE_AGENT_URL'), platform.env('DD_TRACE_URL'), null)
     const lsMetricsEnabled = coalesce(options.lsMetricsEnabled, platform.env('LS_METRICS_ENABLED'), true)
-    const metricsUrl = coalesce(options.metricsUrl, platform.env('LIGHTSTEP_URL'), null)
+    const lsMetricsUrl = coalesce(
+      options.lsMetricsUrl,
+      platform.env('LS_METRICS_URL'),
+      'https://ingest.lightstep.com:443/metrics'
+    )
     const hostname = coalesce(
       options.hostname,
       platform.env('DD_AGENT_HOST'),
@@ -60,7 +64,7 @@ class Config {
     this.env = env
     this.url = url && new URL(url)
     this.lsMetricsEnabled = String(lsMetricsEnabled) === 'true'
-    this.metricsUrl = (metricsUrl && new URL(metricsUrl)) || this.url
+    this.lsMetricsUrl = (lsMetricsUrl && new URL(lsMetricsUrl)) || this.url
     this.hostname = hostname || (this.url && this.url.hostname)
     this.port = String(port || (this.url && this.url.port))
     this.flushInterval = flushInterval

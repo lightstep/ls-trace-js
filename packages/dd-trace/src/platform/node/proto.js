@@ -16,9 +16,9 @@ class Client {
     options = options || {}
     this._start = now()
     this._lastTime = this._start
-    this._url = options.metricsUrl || new Url(options.hostname)
+    this._url = options.lsMetricsUrl || new Url(options.hostname)
 
-    if (options.metricsUrl) {
+    if (options.lsMetricsUrl) {
       this._host = this._url.hostname
       this._port = this._url.port
       this._path = this._url.pathname
