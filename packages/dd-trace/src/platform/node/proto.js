@@ -30,9 +30,16 @@ class Client {
 
     this._prefix = options.prefix || ''
     this._tags = options.tags || []
-    this._clientToken = options.clientToken || ''
+    this._accessToken = this._accessTokenFromTags(this._tags)
     this._componentName = options.service || ''
     this._points = []
+  }
+
+  _accessTokenFromTags (tags) {
+    for (let tag of tags) {
+      if(tag.startsWith('lightstep.access_token:')) return tag.split(':')[1]
+    }
+    return ''
   }
 
   gauge (name, value, tags) {
@@ -100,7 +107,7 @@ class Client {
         Accept: 'application/octet-stream',
         'Content-Length': buffer.byteLength,
         'Content-Type': 'application/octet-stream',
-        'Lightstep-Access-Token': this._clientToken
+        'Lightstep-Access-Token': this._accessToken
       }
     }
     const request = this._url.protocol === 'http:' ? http.request : https.request
