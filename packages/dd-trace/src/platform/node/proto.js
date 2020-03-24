@@ -30,14 +30,14 @@ class Client {
 
     this._prefix = options.prefix || ''
     this._tags = options.tags || []
-    this._accessToken = this._accessTokenFromTags(this._tags)
-    this._service = options.service || ''
+    this._accessToken = this._valueFromTags('lightstep.access_token', this._tags)
+    this._service = this._valueFromTags('lightstep.service_name', this._tags)
     this._points = []
   }
 
-  _accessTokenFromTags (tags) {
+  _valueFromTags (key, tags) {
     for (const tag of tags) {
-      if (tag.startsWith('lightstep.access_token:')) return tag.split(':')[1]
+      if (tag.startsWith(`${key}:`)) return tag.split(':')[1]
     }
     return ''
   }
