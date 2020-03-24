@@ -35,6 +35,8 @@ node-core-base: &node-core-base
       run:
         name: Unit tests
         command: yarn test:core
+        environment:
+          LS_METRICS_ENABLED: "false"
     - store_artifacts:
         path: ./coverage/lcov-report
 
@@ -76,6 +78,8 @@ node-plugin-base: &node-plugin-base
     - run:
         name: Unit tests
         command: yarn test:plugins
+        environment:
+          LS_METRICS_ENABLED: "false"
     - store_artifacts:
         path: ./coverage/lcov-report
 

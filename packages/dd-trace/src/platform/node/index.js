@@ -19,7 +19,8 @@ const exporter = require('./exporter')
 
 const emitter = new EventEmitter()
 
-const useDDMetrics = coalesce(process.env['DD_METRICS_RUNTIME'], false)
+const useLSMetrics = String(coalesce(process.env['LS_METRICS_ENABLED'], true)) !== 'false'
+
 const platform = {
   _config: {},
   name: () => 'nodejs',
@@ -33,7 +34,7 @@ const platform = {
   service,
   request,
   msgpack,
-  metrics: useDDMetrics ? metrics : metricsLightStep,
+  metrics: useLSMetrics ? metricsLightStep : metrics,
   plugins,
   hostname,
   on: emitter.on.bind(emitter),

@@ -33,7 +33,7 @@ class Tracer extends BaseTracer {
           platform.validate()
           platform.configure(config)
 
-          if (config.runtimeMetrics) {
+          if (config.lsMetricsEnabled || config.runtimeMetrics) {
             platform.metrics().start()
           }
 

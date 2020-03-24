@@ -16,9 +16,9 @@ class Client {
     options = options || {}
     this._start = now()
     this._lastTime = this._start
-    this._url = options.metricsUrl || new Url(options.hostname)
+    this._url = options.lsMetricsUrl || new Url(options.hostname)
 
-    if (options.metricsUrl) {
+    if (options.lsMetricsUrl) {
       this._host = this._url.hostname
       this._port = this._url.port
       this._path = this._url.pathname
@@ -30,9 +30,16 @@ class Client {
 
     this._prefix = options.prefix || ''
     this._tags = options.tags || []
-    this._clientToken = options.clientToken || ''
-    this._componentName = options.componentName || ''
+    this._accessToken = this._accessTokenFromTags(this._tags)
+    this._service = options.service || ''
     this._points = []
+  }
+
+  _accessTokenFromTags (tags) {
+    for (const tag of tags) {
+      if (tag.startsWith('lightstep.access_token:')) return tag.split(':')[1]
+    }
+    return ''
   }
 
   gauge (name, value, tags) {
@@ -71,7 +78,7 @@ class Client {
       points = this._points.slice()
     }
     this._points = []
-    const report = createProtoReport(points, this._componentName)
+    const report = createProtoReport(points, this._service)
     log.debug('generated machine metrics report in', now() - this._lastTime, 'milliseconds')
     if (!this._skipped) {
       log.debug('skipping initial machine metrics report to be able to calculate delta correctly')
@@ -100,7 +107,7 @@ class Client {
         Accept: 'application/octet-stream',
         'Content-Length': buffer.byteLength,
         'Content-Type': 'application/octet-stream',
-        'Lightstep-Access-Token': this._clientToken
+        'Lightstep-Access-Token': this._accessToken
       }
     }
     const request = this._url.protocol === 'http:' ? http.request : https.request
@@ -148,7 +155,7 @@ class Client {
   }
 }
 
-function createProtoReport (points, componentName) {
+function createProtoReport (points, service) {
   const protoPoints = points.map((point) => {
     const protoPoint = new metrics.MetricPoint()
 
@@ -179,7 +186,7 @@ function createProtoReport (points, componentName) {
   const reportProto = new metrics.IngestRequest()
   reportProto.setIdempotencyKey(getRandomKey())
   reportProto.setPointsList(protoPoints)
-  reportProto.setReporter(getReporter(componentName))
+  reportProto.setReporter(getReporter(service))
 
   return reportProto.serializeBinary()
 }
@@ -188,10 +195,10 @@ function getRandomKey (length) {
   return crypto.randomBytes(30).toString('hex')
 }
 
-function getReporter (componentName) {
+function getReporter (service) {
   const reporter = new collector.Reporter()
   reporter.setTagsList([
-    new NewKeyValue('lightstep.component_name', componentName),
+    new NewKeyValue('lightstep.component_name', service),
     new NewKeyValue('lightstep.hostname', os.hostname()),
     new NewKeyValue('lightstep.reporter_platform', 'ls-trace-js'),
     new NewKeyValue('lightstep.reporter_platform_version', process.version)
