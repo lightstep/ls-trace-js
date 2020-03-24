@@ -36,8 +36,8 @@ class Client {
   }
 
   _accessTokenFromTags (tags) {
-    for (let tag of tags) {
-      if(tag.startsWith('lightstep.access_token:')) return tag.split(':')[1]
+    for (const tag of tags) {
+      if (tag.startsWith('lightstep.access_token:')) return tag.split(':')[1]
     }
     return ''
   }
