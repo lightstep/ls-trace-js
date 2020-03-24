@@ -31,7 +31,7 @@ class Client {
     this._prefix = options.prefix || ''
     this._tags = options.tags || []
     this._accessToken = this._accessTokenFromTags(this._tags)
-    this._componentName = options.service || ''
+    this._service = options.service || ''
     this._points = []
   }
 
@@ -78,7 +78,7 @@ class Client {
       points = this._points.slice()
     }
     this._points = []
-    const report = createProtoReport(points, this._componentName)
+    const report = createProtoReport(points, this._service)
     log.debug('generated machine metrics report in', now() - this._lastTime, 'milliseconds')
     if (!this._skipped) {
       log.debug('skipping initial machine metrics report to be able to calculate delta correctly')
@@ -155,7 +155,7 @@ class Client {
   }
 }
 
-function createProtoReport (points, componentName) {
+function createProtoReport (points, service) {
   const protoPoints = points.map((point) => {
     const protoPoint = new metrics.MetricPoint()
 
@@ -186,7 +186,7 @@ function createProtoReport (points, componentName) {
   const reportProto = new metrics.IngestRequest()
   reportProto.setIdempotencyKey(getRandomKey())
   reportProto.setPointsList(protoPoints)
-  reportProto.setReporter(getReporter(componentName))
+  reportProto.setReporter(getReporter(service))
 
   return reportProto.serializeBinary()
 }
@@ -195,10 +195,10 @@ function getRandomKey (length) {
   return crypto.randomBytes(30).toString('hex')
 }
 
-function getReporter (componentName) {
+function getReporter (service) {
   const reporter = new collector.Reporter()
   reporter.setTagsList([
-    new NewKeyValue('lightstep.component_name', componentName),
+    new NewKeyValue('lightstep.component_name', service),
     new NewKeyValue('lightstep.hostname', os.hostname()),
     new NewKeyValue('lightstep.reporter_platform', 'ls-trace-js'),
     new NewKeyValue('lightstep.reporter_platform_version', process.version)
