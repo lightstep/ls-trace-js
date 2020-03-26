@@ -10,10 +10,10 @@ module.exports = data => {
   codec = codec || msgpack.createCodec({ int64: true })
 
   data = data.map(span => {
-    let truncated_id = span.trace_id.toString()
-    truncated_id = truncated_id.substring(truncated_id.length - 16)
+    let truncatedId = span.trace_id.toString()
+    truncatedId = truncatedId.substring(truncatedId.length - 16)
     return Object.assign({}, span, {
-      trace_id: new Uint64BE(id(truncated_id, 16).toBuffer()),
+      trace_id: new Uint64BE(id(truncatedId, 16).toBuffer()),
       span_id: new Uint64BE(span.span_id.toBuffer()),
       parent_id: new Uint64BE(span.parent_id.toBuffer()),
       start: new Int64BE(span.start),
