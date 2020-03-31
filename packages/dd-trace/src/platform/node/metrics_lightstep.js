@@ -3,10 +3,13 @@
 const v8 = require('v8')
 const path = require('path')
 const os = require('os')
-const Client = require('./dogstatsd')
+const ClientProto = require('./proto')
 const log = require('../../log')
 const Histogram = require('../../histogram')
+const si = require('systeminformation')
 
+const MICROSECOND = 1 / 1e6
+const NANOSECOND = 1 / 1e9
 let nativeMetrics = null
 
 let metrics
@@ -14,6 +17,7 @@ let interval
 let client
 let time
 let cpuUsage
+let previousNetworkStats
 let gauges
 let counters
 let histograms
@@ -50,31 +54,43 @@ module.exports = function () {
         nativeMetrics = null
       }
 
-      client = new Client({
-        host: this._config.hostname,
-        port: this._config.dogstatsd.port,
-        tags
-      })
+      client = new ClientProto(Object.assign(
+        {},
+        this._config, {
+          tags
+        })
+      )
 
       time = process.hrtime()
 
+      let intervalCallback
       if (nativeMetrics) {
-        interval = setInterval(() => {
-          captureCommonMetrics()
-          captureNativeMetrics()
-          client.flush()
-        }, this._config.reportingInterval)
+        intervalCallback = function () {
+          Promise.all([
+            captureNetworkMetrics(),
+            captureMemTotalMetrics(),
+            captureCommonMetrics(),
+            captureNativeMetrics()
+          ]).then(() => {
+            client.flush()
+          })
+        }
       } else {
         cpuUsage = process.cpuUsage()
-
-        interval = setInterval(() => {
-          captureCommonMetrics()
-          captureCpuUsage()
-          captureHeapSpace()
-          client.flush()
-        }, this._config.reportingInterval)
+        intervalCallback = function () {
+          Promise.all([
+            captureNetworkMetrics(),
+            captureMemTotalMetrics(),
+            captureCommonMetrics(),
+            captureCpuUsage(),
+            captureHeapSpace()
+          ]).then(() => {
+            client.flush()
+          })
+        }
       }
-
+      intervalCallback()
+      interval = setInterval(intervalCallback, this._config.reportingInterval)
       interval.unref()
     },
 
@@ -153,28 +169,25 @@ function reset () {
   client = null
   time = null
   cpuUsage = null
+  previousNetworkStats = null
   gauges = {}
   counters = {}
   histograms = {}
 }
 
 function captureCpuUsage () {
-  if (!process.cpuUsage) return
+  if (!process.cpuUsage) return Promise.resolve()
 
-  const elapsedTime = process.hrtime(time)
   const elapsedUsage = process.cpuUsage(cpuUsage)
 
   time = process.hrtime()
   cpuUsage = process.cpuUsage()
 
-  const elapsedMs = elapsedTime[0] * 1000 + elapsedTime[1] / 1000000
-  const userPercent = 100 * elapsedUsage.user / 1000 / elapsedMs
-  const systemPercent = 100 * elapsedUsage.system / 1000 / elapsedMs
-  const totalPercent = userPercent + systemPercent
-
-  client.gauge('runtime.node.cpu.system', systemPercent.toFixed(2))
-  client.gauge('runtime.node.cpu.user', userPercent.toFixed(2))
-  client.gauge('runtime.node.cpu.total', totalPercent.toFixed(2))
+  client.increment('cpu.user', elapsedUsage.user * MICROSECOND)
+  client.increment('cpu.sys', elapsedUsage.system * MICROSECOND)
+  client.increment('cpu.usage', (elapsedUsage.user + elapsedUsage.system) * MICROSECOND)
+  client.increment('cpu.total', (cpuUsage.user + cpuUsage.system) * MICROSECOND)
+  return Promise.resolve()
 }
 
 function captureMemoryUsage () {
@@ -207,7 +220,7 @@ function captureHeapStats () {
 }
 
 function captureHeapSpace () {
-  if (!v8.getHeapSpaceStatistics) return
+  if (!v8.getHeapSpaceStatistics) return Promise.resolve()
 
   const stats = v8.getHeapSpaceStatistics()
 
@@ -219,6 +232,7 @@ function captureHeapSpace () {
     client.gauge('runtime.node.heap.available_size.by.space', stats[i].space_available_size, tags)
     client.gauge('runtime.node.heap.physical_size.by.space', stats[i].physical_space_size, tags)
   }
+  return Promise.resolve()
 }
 
 function captureGauges () {
@@ -248,6 +262,51 @@ function captureHistograms () {
   })
 }
 
+function captureMemTotalMetrics () {
+  return new Promise(function (resolve) {
+    si.mem().then((result) => {
+      client.gauge('mem.total', result.total)
+      client.gauge('mem.available', result.available)
+      resolve()
+    }).catch((error) => {
+      // log error
+      resolve()
+    })
+  })
+}
+
+function captureNetworkMetrics () {
+  return new Promise(function (resolve) {
+    si.networkStats().then((results) => {
+      const networkStats = results.reduce((previousValue, currentValue) => {
+        const obj = {}
+        Object.keys(currentValue).forEach((key) => {
+          if (typeof currentValue[key] === 'number') {
+            obj[key] = currentValue[key] + (previousValue[key] || 0)
+          }
+        })
+        return obj
+      }, {})
+
+      const lastStats = Object.assign({}, networkStats)
+      if (previousNetworkStats) {
+        // calculate delta
+        Object.keys(networkStats).forEach((key) => {
+          networkStats[key] = networkStats[key] - previousNetworkStats[key]
+        })
+      }
+      previousNetworkStats = lastStats
+      client.increment('net.bytes_sent', networkStats.tx_bytes)
+      client.increment('net.bytes_recv', networkStats.rx_bytes)
+
+      resolve()
+    }).catch(() => {
+      // log error ?
+      resolve()
+    })
+  })
+}
+
 function captureCommonMetrics () {
   captureMemoryUsage()
   captureProcess()
@@ -255,6 +314,7 @@ function captureCommonMetrics () {
   captureGauges()
   captureCounters()
   captureHistograms()
+  return Promise.resolve()
 }
 
 function captureNativeMetrics () {
@@ -265,13 +325,10 @@ function captureNativeMetrics () {
   time = process.hrtime()
 
   const elapsedUs = elapsedTime[0] * 1e6 + elapsedTime[1] / 1e3
-  const userPercent = 100 * stats.cpu.user / elapsedUs
-  const systemPercent = 100 * stats.cpu.system / elapsedUs
-  const totalPercent = userPercent + systemPercent
-
-  client.gauge('runtime.node.cpu.system', systemPercent.toFixed(2))
-  client.gauge('runtime.node.cpu.user', userPercent.toFixed(2))
-  client.gauge('runtime.node.cpu.total', totalPercent.toFixed(2))
+  client.increment('cpu.user', stats.cpu.user * MICROSECOND)
+  client.increment('cpu.sys', stats.cpu.system * MICROSECOND)
+  client.increment('cpu.usage', (stats.cpu.user + stats.cpu.system) * MICROSECOND)
+  client.increment('cpu.total', elapsedUs * MICROSECOND)
 
   histogram('runtime.node.event_loop.delay', stats.eventLoop)
 
@@ -306,17 +363,16 @@ function captureNativeMetrics () {
       client.gauge('runtime.node.spans.unfinished.by.name', operations.unfinished[name], [`span_name:${name}`])
     })
   }
+  return Promise.resolve()
 }
 
 function histogram (name, stats, tags) {
   tags = [].concat(tags || [])
 
-  client.gauge(`${name}.min`, stats.min, tags)
-  client.gauge(`${name}.max`, stats.max, tags)
-  client.increment(`${name}.sum`, stats.sum, tags)
-  client.increment(`${name}.total`, stats.sum, tags)
-  client.gauge(`${name}.avg`, stats.avg, tags)
+  client.gauge(`${name}.min`, stats.min * NANOSECOND, tags)
+  client.gauge(`${name}.max`, stats.max * NANOSECOND, tags)
+  client.increment(`${name}.sum`, stats.sum * NANOSECOND, tags)
+  client.increment(`${name}.total`, stats.sum * NANOSECOND, tags)
+  client.gauge(`${name}.avg`, stats.avg * NANOSECOND, tags)
   client.increment(`${name}.count`, stats.count, tags)
-  client.gauge(`${name}.median`, stats.median, tags)
-  client.gauge(`${name}.95percentile`, stats.p95, tags)
 }
