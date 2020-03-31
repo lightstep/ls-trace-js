@@ -553,7 +553,7 @@ describe('Platform', () => {
           metrics.apply(platform).histogram('test', 3)
 
           clock.tick(10000)
-          const NANOSECOND = 1/1e9
+          const NANOSECOND = 1 / 1e9
 
           expect(client.gauge).to.have.been.calledWith('test.max', 3 * NANOSECOND)
           expect(client.gauge).to.have.been.calledWith('test.min', 1 * NANOSECOND)
