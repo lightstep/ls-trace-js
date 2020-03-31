@@ -553,12 +553,13 @@ describe('Platform', () => {
           metrics.apply(platform).histogram('test', 3)
 
           clock.tick(10000)
+          const NANOSECOND = 1 / 1e9
 
-          expect(client.gauge).to.have.been.calledWith('test.max', 3)
-          expect(client.gauge).to.have.been.calledWith('test.min', 1)
-          expect(client.increment).to.have.been.calledWith('test.sum', 6)
-          expect(client.increment).to.have.been.calledWith('test.total', 6)
-          expect(client.gauge).to.have.been.calledWith('test.avg', 2)
+          expect(client.gauge).to.have.been.calledWith('test.max', 3 * NANOSECOND)
+          expect(client.gauge).to.have.been.calledWith('test.min', 1 * NANOSECOND)
+          expect(client.increment).to.have.been.calledWith('test.sum', 6 * NANOSECOND)
+          expect(client.increment).to.have.been.calledWith('test.total', 6 * NANOSECOND)
+          expect(client.gauge).to.have.been.calledWith('test.avg', 2 * NANOSECOND)
           expect(client.increment).to.have.been.calledWith('test.count', 3)
         })
       })

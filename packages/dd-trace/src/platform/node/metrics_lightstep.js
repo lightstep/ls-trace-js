@@ -9,6 +9,7 @@ const Histogram = require('../../histogram')
 const si = require('systeminformation')
 
 const MICROSECOND = 1 / 1e6
+const NANOSECOND = 1 / 1e9
 let nativeMetrics = null
 
 let metrics
@@ -368,10 +369,10 @@ function captureNativeMetrics () {
 function histogram (name, stats, tags) {
   tags = [].concat(tags || [])
 
-  client.gauge(`${name}.min`, stats.min, tags)
-  client.gauge(`${name}.max`, stats.max, tags)
-  client.increment(`${name}.sum`, stats.sum, tags)
-  client.increment(`${name}.total`, stats.sum, tags)
-  client.gauge(`${name}.avg`, stats.avg, tags)
+  client.gauge(`${name}.min`, stats.min * NANOSECOND, tags)
+  client.gauge(`${name}.max`, stats.max * NANOSECOND, tags)
+  client.increment(`${name}.sum`, stats.sum * NANOSECOND, tags)
+  client.increment(`${name}.total`, stats.sum * NANOSECOND, tags)
+  client.gauge(`${name}.avg`, stats.avg * NANOSECOND, tags)
   client.increment(`${name}.count`, stats.count, tags)
 }
