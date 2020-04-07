@@ -142,7 +142,7 @@ class Client {
       if (res.statusCode && res.statusCode < 300) {
         onSuccess()
       } else {
-        log.error('request failed', res.statusCode)
+        log.error(`request failed: ${res.statusCode} ${res.statusMessage}`)
         retry(res.statusCode)
       }
     })

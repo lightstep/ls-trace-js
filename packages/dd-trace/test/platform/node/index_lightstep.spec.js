@@ -415,7 +415,7 @@ describe('Platform', () => {
             tags: {
               str: 'bar',
               obj: {},
-              invalid: 't{e*s#t5-:./'
+              special: 't{e*s#t5-:./'
             }
           },
           name: sinon.stub().returns('nodejs'),
@@ -442,7 +442,7 @@ describe('Platform', () => {
               'service:service',
               'env:test',
               'str:bar',
-              'invalid:t_e_s_t5-:./'
+              'special:t{e*s#t5-:./'
             ]
           })
         })
