@@ -1,6 +1,5 @@
 'use strict'
 
-const coalesce = require('koalas')
 const EventEmitter = require('events')
 const crypto = require('./crypto')
 const now = require('./now')
@@ -10,7 +9,7 @@ const service = require('./service')
 const request = require('./request')
 const msgpack = require('./msgpack')
 const metrics = require('./metrics')
-const metricsLightStep = require('./metrics_lightstep')
+const lsMetrics = require('./metrics_lightstep')
 const plugins = require('../../plugins')
 const hostname = require('./hostname')
 const Loader = require('./loader')
@@ -18,8 +17,6 @@ const Scope = require('../../scope/async_hooks')
 const exporter = require('./exporter')
 
 const emitter = new EventEmitter()
-
-const useLSMetrics = String(coalesce(process.env['LS_METRICS_ENABLED'], true)) !== 'false'
 
 const platform = {
   _config: {},
@@ -34,7 +31,8 @@ const platform = {
   service,
   request,
   msgpack,
-  metrics: useLSMetrics ? metricsLightStep : metrics,
+  metrics,
+  lsMetrics,
   plugins,
   hostname,
   on: emitter.on.bind(emitter),
