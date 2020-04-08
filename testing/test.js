@@ -1,6 +1,5 @@
 'use strict';
 
-const express = require('express');
 const tracer = require('../packages/dd-trace').init({
   experimental: {
     b3: true
@@ -10,6 +9,7 @@ const tracer = require('../packages/dd-trace').init({
   metricsUrl: 'METRICS_URL',
 });
 
+const express = require('express');
 const app = express();
 
 setInterval(() => {

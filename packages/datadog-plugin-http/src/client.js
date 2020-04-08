@@ -250,6 +250,7 @@ function getStatusValidator (config) {
 
 function getFilter (tracer, config) {
   const blacklist = tracer._url ? [`${tracer._url.href}/v0.4/traces`] : []
+  if (tracer._lsMetricsUrl) blacklist.push(tracer._lsMetricsUrl.href)
 
   config = Object.assign({}, config, {
     blacklist: blacklist.concat(config.blacklist || [])
