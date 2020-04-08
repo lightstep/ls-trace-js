@@ -1,0 +1,583 @@
+<!doctype html>
+<html class="default no-js">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>dd-trace</title>
+	<meta name="description" content="">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+<header>
+	<div class="tsd-page-toolbar">
+		<div class="container">
+			<div class="table-wrap">
+				<div class="table-cell" id="tsd-search" data-index="assets/js/search.js" data-base=".">
+					<div class="field">
+						<label for="tsd-search-field" class="tsd-widget search no-caption">Search</label>
+						<input id="tsd-search-field" type="text" />
+					</div>
+					<ul class="results">
+						<li class="state loading">Preparing search index...</li>
+						<li class="state failure">The search index is not available</li>
+					</ul>
+					<a href="index.html" class="title">dd-trace</a>
+				</div>
+				<div class="table-cell" id="tsd-widgets">
+					<div id="tsd-filter">
+						<a href="#" class="tsd-widget options no-caption" data-toggle="options">Options</a>
+						<div class="tsd-filter-group">
+							<div class="tsd-select" id="tsd-filter-visibility">
+								<span class="tsd-select-label">All</span>
+								<ul class="tsd-select-list">
+									<li data-value="public">Public</li>
+									<li data-value="protected">Public/Protected</li>
+									<li data-value="private" class="selected">All</li>
+								</ul>
+							</div>
+							<input type="checkbox" id="tsd-filter-inherited" checked />
+							<label class="tsd-widget" for="tsd-filter-inherited">Inherited</label>
+							<input type="checkbox" id="tsd-filter-only-exported" />
+							<label class="tsd-widget" for="tsd-filter-only-exported">Only exported</label>
+						</div>
+					</div>
+					<a href="#" class="tsd-widget menu no-caption" data-toggle="menu">Menu</a>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="tsd-page-title">
+		<div class="container">
+			<ul class="tsd-breadcrumb">
+				<li>
+					<a href="globals.html">Globals</a>
+				</li>
+			</ul>
+			<h1> dd-trace</h1>
+		</div>
+	</div>
+</header>
+<div class="container container-main">
+	<div class="row">
+		<div class="col-8 col-content">
+			<div class="tsd-panel tsd-typography">
+				<h1 id="home">Datadog JavaScript Tracer API</h1>
+				<p>This is the API documentation for the Datadog JavaScript Tracer. If you are just looking to get started, check out the <a href="https://docs.datadoghq.com/tracing/setup/nodejs/">tracing setup documentation</a>.</p>
+				<h2 id="overview">Overview</h2>
+				<p>The module exported by this library is an instance of the <a href="./interfaces/tracer.html">Tracer</a> class.</p>
+				<h2 id="manual-instrumentation">Manual Instrumentation</h2>
+				<p>If you aren’t using supported library instrumentation (see <a href="https://docs.datadoghq.com/tracing/setup/nodejs/#compatibility">Compatibility</a>), you may want to manually instrument your code.</p>
+				<p>This can be done using the <a href="#opentracing-api">OpenTracing API</a> and the <a href="#scope-manager">Scope Manager</a>.</p>
+				<h3 id="opentracing-api">OpenTracing API</h3>
+				<p>This library is OpenTracing compliant. Use the <a href="https://doc.esdoc.org/github.com/opentracing/opentracing-javascript/">OpenTracing API</a> and the Datadog Tracer (dd-trace) library to measure execution times for specific pieces of code. In the following example, a Datadog Tracer is initialized and used as a global tracer:</p>
+				<pre><code class="language-javascript"><span class="hljs-keyword">const</span> tracer = <span class="hljs-built_in">require</span>(<span class="hljs-string">'dd-trace'</span>).init()
+<span class="hljs-keyword">const</span> opentracing = <span class="hljs-built_in">require</span>(<span class="hljs-string">'opentracing'</span>)
+
+opentracing.initGlobalTracer(tracer)</code></pre>
+				<p>The following tags are available to override Datadog specific options:</p>
+				<ul>
+					<li><code>service.name</code>: The service name to be used for this span. The service name from the tracer will be used if this is not provided.</li>
+					<li><code>resource.name</code>: The resource name to be used for this span. The operation name will be used if this is not provided.</li>
+					<li><code>span.type</code>: The span type to be used for this span. Will fallback to <code>custom</code> if not provided.</li>
+				</ul>
+				<h3 id="scope-manager">Scope Manager</h3>
+				<p>In order to provide context propagation, this library includes a scope manager.
+					A scope is basically a wrapper around a span that can cross both synchronous and
+				asynchronous contexts.</p>
+				<p>The scope manager contains 3 APIs available on <code>tracer.scope()</code>:</p>
+				<h4>scope.active()</h4>
+				<p>This method returns the active span from the current scope.</p>
+				<h4>scope.activate(span, fn)</h4>
+				<p>This method activates the provided span in a new scope available in the
+					provided function. Any asynchronous context created from whithin that function
+				will also have the same scope.</p>
+				<pre><code class="language-javascript"><span class="hljs-keyword">const</span> tracer = <span class="hljs-built_in">require</span>(<span class="hljs-string">'dd-trace'</span>).init()
+<span class="hljs-keyword">const</span> scope = tracer.scope()
+<span class="hljs-keyword">const</span> log = <span class="hljs-built_in">console</span>.log
+
+<span class="hljs-keyword">const</span> requestSpan = tracer.startSpan(<span class="hljs-string">'web.request'</span>)
+<span class="hljs-keyword">const</span> promise = <span class="hljs-built_in">Promise</span>.resolve()
+
+scope.activate(requestSpan, () =&gt; {
+  log(scope.active()) <span class="hljs-comment">// requestSpan because in new scope</span>
+
+  someFunction() <span class="hljs-comment">// requestSpan because called in scope</span>
+
+  setTimeout(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+    log(scope.active()) <span class="hljs-comment">// requestSpan because setTimeout called in scope</span>
+  })
+
+  promise.then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+    log(scope.active()) <span class="hljs-comment">// requestSpan because then() called in scope</span>
+  })
+})
+
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">someFunction</span> (<span class="hljs-params"></span>) </span>{
+  log(scope.active())
+}
+
+log(scope.active()) <span class="hljs-comment">// null</span>
+
+someFunction() <span class="hljs-comment">// null because called outside the scope</span></code></pre>
+				<h4>scope.bind(target, [span])</h4>
+				<p>This method binds a target to the specified span, or to the active span if
+				unspecified. It supports binding functions, promises and event emitters.</p>
+				<p>When a span is provided, the target is always bound to that span. Explicitly
+					passing <code>null</code> as the span will actually bind to <code>null</code> or no span. When a span
+				is not provided, the binding uses the following rules:</p>
+				<ul>
+					<li>Functions are bound to the span that is active when <code>scope.bind(fn)</code> is called.</li>
+					<li>Promise handlers are bound to the active span in the scope where <code>.then()</code> was
+					called. This also applies to any equivalent method such as <code>.catch()</code>.</li>
+					<li>Event emitter listeners are bound to the active span in the scope where
+						<code>.addEventListener()</code> was called. This also applies to any equivalent method
+					such as <code>.on()</code></li>
+				</ul>
+				<p><strong>Note</strong>: Native promises and promises from <code>bluebird</code>, <code>q</code> and <code>when</code> are
+				already bound by default and don&#39;t need to be explicitly bound.</p>
+				<h5>Examples</h5>
+				<h6>Function binding</h6>
+				<pre><code class="language-javascript"><span class="hljs-keyword">const</span> tracer = <span class="hljs-built_in">require</span>(<span class="hljs-string">'dd-trace'</span>).init()
+<span class="hljs-keyword">const</span> scope = tracer.scope()
+<span class="hljs-keyword">const</span> log = <span class="hljs-built_in">console</span>.log
+
+<span class="hljs-keyword">const</span> outerSpan = tracer.startSpan(<span class="hljs-string">'web.request'</span>)
+
+scope.activate(outerSpan, () =&gt; {
+  <span class="hljs-keyword">const</span> innerSpan = tracer.startSpan(<span class="hljs-string">'web.middleware'</span>)
+
+  <span class="hljs-keyword">const</span> boundToInner = scope.bind(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+    log(scope.active())
+  }, innerSpan)
+
+  <span class="hljs-keyword">const</span> boundToOuter = scope.bind(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+    log(scope.active())
+  })
+
+  boundToInner() <span class="hljs-comment">// innerSpan because explicitly bound</span>
+  boundToOuter() <span class="hljs-comment">// outerSpan because implicitly bound</span>
+})</code></pre>
+				<h6>Promise binding</h6>
+				<pre><code class="language-javascript"><span class="hljs-keyword">const</span> tracer = <span class="hljs-built_in">require</span>(<span class="hljs-string">'dd-trace'</span>).init()
+<span class="hljs-keyword">const</span> scope = tracer.scope()
+<span class="hljs-keyword">const</span> log = <span class="hljs-built_in">console</span>.log
+
+<span class="hljs-keyword">const</span> outerSpan = tracer.startSpan(<span class="hljs-string">'web.request'</span>)
+<span class="hljs-keyword">const</span> innerPromise = <span class="hljs-built_in">Promise</span>.resolve()
+<span class="hljs-keyword">const</span> outerPromise = <span class="hljs-built_in">Promise</span>.resolve()
+
+scope.activate(outerSpan, () =&gt; {
+  <span class="hljs-keyword">const</span> innerSpan = tracer.startSpan(<span class="hljs-string">'web.middleware'</span>)
+
+  scope.bind(innerPromise, innerSpan)
+  scope.bind(outerPromise)
+
+  innerPromise.then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+    log(scope.active()) <span class="hljs-comment">// innerSpan because explicitly bound</span>
+  })
+
+  outerPromise.then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> {
+    log(scope.active()) <span class="hljs-comment">// outerSpan because implicitly bound on `then()` call</span>
+  })
+})</code></pre>
+				<p><strong>Note</strong>: <code>async/await</code> cannot be bound and always execute in the scope where
+					<code>await</code> was called. If binding <code>async/await</code> is needed, the promise must be
+				wrapped by a function.</p>
+				<h6>Event emitter binding</h6>
+				<pre><code class="language-javascript"><span class="hljs-keyword">const</span> tracer = <span class="hljs-built_in">require</span>(<span class="hljs-string">'dd-trace'</span>).init()
+<span class="hljs-keyword">const</span> scope = tracer.scope()
+<span class="hljs-keyword">const</span> log = <span class="hljs-built_in">console</span>.log
+<span class="hljs-keyword">const</span> EventEmitter = <span class="hljs-built_in">require</span>(<span class="hljs-string">'events'</span>).EventEmitter
+
+<span class="hljs-keyword">const</span> outerSpan = tracer.startSpan(<span class="hljs-string">'web.request'</span>)
+<span class="hljs-keyword">const</span> innerEmitter = <span class="hljs-keyword">new</span> EventEmitter()
+<span class="hljs-keyword">const</span> outerEmitter = <span class="hljs-keyword">new</span> EventEmitter()
+
+scope.activate(outerSpan, <span class="hljs-keyword">async</span> () =&gt; {
+  <span class="hljs-keyword">const</span> innerSpan = tracer.startSpan(<span class="hljs-string">'web.middleware'</span>)
+
+  scope.bind(innerEmitter, innerSpan)
+  scope.bind(outerEmitter)
+
+  innerEmitter.on(<span class="hljs-string">'request'</span>, () =&gt; {
+    log(scope.active()) <span class="hljs-comment">// innerSpan because explicitly bound</span>
+  })
+
+  outerEmitter.on(<span class="hljs-string">'request'</span>, () =&gt; {
+    log(scope.active()) <span class="hljs-comment">// outerSpan because implicitly bound on `then()` call</span>
+  })
+})
+
+innerEmitter.emit(<span class="hljs-string">'request'</span>)
+outerEmitter.emit(<span class="hljs-string">'request'</span>)</code></pre>
+				<p>See the <a href="./interfaces/scope.html">API documentation</a> for more details.</p>
+				<h2 id="integrations">Integrations</h2>
+				<p>APM provides out-of-the-box instrumentation for many popular frameworks and libraries by using a plugin system. By default all built-in plugins are enabled. Disabling plugins can cause unexpected side effects, so it is highly recommended to leave them enabled.</p>
+				<p>Built-in plugins can be configured individually:</p>
+				<pre><code class="language-javascript"><span class="hljs-keyword">const</span> tracer = <span class="hljs-built_in">require</span>(<span class="hljs-string">'dd-trace'</span>).init()
+
+<span class="hljs-comment">// enable and configure postgresql integration</span>
+tracer.use(<span class="hljs-string">'pg'</span>, {
+  <span class="hljs-attr">service</span>: <span class="hljs-string">'pg-cluster'</span>
+})</code></pre>
+				<h5 id="amqplib"></h5>
+				<h5 id="amqplib-tags"></h5>
+				<h5 id="amqplib-config"></h5>
+				<h5 id="bunyan"></h5>
+				<h5 id="couchbase"></h5>
+				<h5 id="dns"></h5>
+				<h5 id="elasticsearch"></h5>
+				<h5 id="elasticsearch-tags"></h5>
+				<h5 id="elasticsearch-config"></h5>
+				<h5 id="express"></h5>
+				<h5 id="express-tags"></h5>
+				<h5 id="express-config"></h5>
+				<h5 id="generic-pool"></h5>
+				<h5 id="google-cloud-pubsub"></h5>
+				<h5 id="fastify"></h5>
+				<h5 id="fs"></h5>
+				<h5 id="graphql"></h5>
+				<h5 id="graphql-tags"></h5>
+				<h5 id="graphql-config"></h5>
+				<h5 id="grpc"></h5>
+				<h5 id="hapi"></h5>
+				<h5 id="hapi-tags"></h5>
+				<h5 id="hapi-config"></h5>
+				<h5 id="http"></h5>
+				<h5 id="http-tags"></h5>
+				<h5 id="http-config"></h5>
+				<h5 id="ioredis"></h5>
+				<h5 id="ioredis-tags"></h5>
+				<h5 id="ioredis-config"></h5>
+				<h5 id="koa"></h5>
+				<h5 id="koa-tags"></h5>
+				<h5 id="koa-config"></h5>
+				<h5 id="limitd-client"></h5>
+				<h5 id="memcached"></h5>
+				<h5 id="memcached-tags"></h5>
+				<h5 id="memcached-config"></h5>
+				<h5 id="mongodb-core"></h5>
+				<h5 id="mongodb-core-tags"></h5>
+				<h5 id="mongodb-core-config"></h5>
+				<h5 id="mysql"></h5>
+				<h5 id="mysql-tags"></h5>
+				<h5 id="mysql-config"></h5>
+				<h5 id="mysql2"></h5>
+				<h5 id="mysql2-tags"></h5>
+				<h5 id="mysql2-config"></h5>
+				<h5 id="net"></h5>
+				<h5 id="paperplane"></h5>
+				<h5 id="paperplane-tags"></h5>
+				<h5 id="paperplane-config"></h5>
+				<h5 id="pino"></h5>
+				<h5 id="pg"></h5>
+				<h5 id="pg-tags"></h5>
+				<h5 id="pg-config"></h5>
+				<h5 id="redis"></h5>
+				<h5 id="redis-tags"></h5>
+				<h5 id="redis-config"></h5>
+				<h5 id="restify"></h5>
+				<h5 id="restify-tags"></h5>
+				<h5 id="restify-config"></h5>
+				<h5 id="tedious"></h5>
+				<h5 id="when"></h5>
+				<h5 id="winston"></h5>
+				<h3 id="integrations-list">Available Plugins</h3>
+				<ul>
+					<li><a href="./interfaces/plugins.amqp10.html">amqp10</a></li>
+					<li><a href="./interfaces/plugins.amqplib.html">amqplib</a></li>
+					<li><a href="./interfaces/plugins.bluebird.html">bluebird</a></li>
+					<li><a href="./interfaces/plugins.couchbase.html">couchbase</a></li>
+					<li><a href="./interfaces/plugins.bunyan.html">bunyan</a></li>
+					<li><a href="./interfaces/plugins.cassandra_driver.html">cassandra-driver</a></li>
+					<li><a href="./interfaces/plugins.connect.html">connect</a></li>
+					<li><a href="./interfaces/plugins.dns.html">dns</a></li>
+					<li><a href="./interfaces/plugins.elasticsearch.html">elasticsearch</a></li>
+					<li><a href="./interfaces/plugins.express.html">express</a></li>
+					<li><a href="./interfaces/plugins.fastify.html">fastify</a></li>
+					<li><a href="./interfaces/plugins.fs.html">fs</a></li>
+					<li><a href="./interfaces/plugins.generic_pool.html">generic-pool</a></li>
+					<li><a href="./interfaces/plugins.google_cloud_pubsub.html">google-cloud-pubsub</a></li>
+					<li><a href="./interfaces/plugins.graphql.html">graphql</a></li>
+					<li><a href="./interfaces/plugins.grpc.html">grpc</a></li>
+					<li><a href="./interfaces/plugins.hapi.html">hapi</a></li>
+					<li><a href="./interfaces/plugins.http.html">http</a></li>
+					<li><a href="./interfaces/plugins.http2.html">http2</a></li>
+					<li><a href="./interfaces/plugins.ioredis.html">ioredis</a></li>
+					<li><a href="./interfaces/plugins.knex.html">knex</a></li>
+					<li><a href="./interfaces/plugins.koa.html">koa</a></li>
+					<li><a href="./interfaces/plugins.limitd_client.html">limitd-client</a></li>
+					<li><a href="./interfaces/plugins.ioredis.html">ioredis</a></li>
+					<li><a href="./interfaces/plugins.mongodb_core.html">mongodb-core</a></li>
+					<li><a href="./interfaces/plugins.mysql.html">mysql</a></li>
+					<li><a href="./interfaces/plugins.mysql2.html">mysql2</a></li>
+					<li><a href="./interfaces/plugins.net.html">net</a></li>
+					<li><a href="./interfaces/plugins.paperplane.html">paperplane</a></li>
+					<li><a href="./interfaces/plugins.pino.html">pino</a></li>
+					<li><a href="./interfaces/plugins.pg.html">pg</a></li>
+					<li><a href="./interfaces/plugins.promise.html">promise</a></li>
+					<li><a href="./interfaces/plugins.promise_js.html">promise-js</a></li>
+					<li><a href="./interfaces/plugins.q.html">q</a></li>
+					<li><a href="./interfaces/plugins.redis.html">redis</a></li>
+					<li><a href="./interfaces/plugins.restify.html">restify</a></li>
+					<li><a href="./interfaces/plugins.router.html">router</a></li>
+					<li><a href="./interfaces/plugins.tedious.html">tedious</a></li>
+					<li><a href="./interfaces/plugins.when.html">when</a></li>
+					<li><a href="./interfaces/plugins.winston.html">winston</a></li>
+				</ul>
+				<h2 id="advanced-configuration">Advanced Configuration</h2>
+				<h3 id="tracer-settings">Tracer settings</h3>
+				<p>Options can be configured as a parameter to the <a href="./interfaces/tracer.html#init">init()</a> method or as environment variables.</p>
+				<table>
+					<thead>
+						<tr>
+							<th>Config</th>
+							<th>Environment Variable</th>
+							<th>Default</th>
+							<th>Description</th>
+						</tr>
+					</thead>
+					<tbody><tr>
+							<td>enabled</td>
+							<td><code>DD_TRACE_ENABLED</code></td>
+							<td><code>true</code></td>
+							<td>Whether to enable the tracer.</td>
+						</tr>
+						<tr>
+							<td>debug</td>
+							<td><code>DD_TRACE_DEBUG</code></td>
+							<td><code>false</code></td>
+							<td>Enable debug logging in the tracer.</td>
+						</tr>
+						<tr>
+							<td>service</td>
+							<td><code>DD_SERVICE_NAME</code></td>
+							<td>-</td>
+							<td>The service name to be used for this program.</td>
+						</tr>
+						<tr>
+							<td>url</td>
+							<td><code>DD_TRACE_AGENT_URL</code></td>
+							<td>-</td>
+							<td>The url of the trace agent that the tracer will submit to. Takes priority over hostname and port, if set.</td>
+						</tr>
+						<tr>
+							<td>hostname</td>
+							<td><code>DD_TRACE_AGENT_HOSTNAME</code></td>
+							<td><code>localhost</code></td>
+							<td>The address of the agent that the tracer will submit to.</td>
+						</tr>
+						<tr>
+							<td>port</td>
+							<td><code>DD_TRACE_AGENT_PORT</code></td>
+							<td><code>8126</code></td>
+							<td>The port of the trace agent that the tracer will submit to.</td>
+						</tr>
+						<tr>
+							<td>dogstatsd.port</td>
+							<td><code>DD_DOGSTATSD_PORT</code></td>
+							<td><code>8125</code></td>
+							<td>The port of the Dogstatsd agent that metrics will be submitted to.</td>
+						</tr>
+						<tr>
+							<td>env</td>
+							<td><code>DD_ENV</code></td>
+							<td>-</td>
+							<td>Set an application’s environment e.g. <code>prod</code>, <code>pre-prod</code>, <code>stage</code>.</td>
+						</tr>
+						<tr>
+							<td>logInjection</td>
+							<td><code>DD_LOGS_INJECTION</code></td>
+							<td><code>false</code></td>
+							<td>Enable automatic injection of trace IDs in logs for supported logging libraries.</td>
+						</tr>
+						<tr>
+							<td>tags</td>
+							<td><code>DD_TAGS</code></td>
+							<td><code>{}</code></td>
+							<td>Set global tags that should be applied to all spans and metrics. When passed as an environment variable, the format is <code>key:value,key:value</code></td>
+						</tr>
+						<tr>
+							<td>sampleRate</td>
+							<td>-</td>
+							<td><code>1</code></td>
+							<td>Percentage of spans to sample as a float between 0 and 1.</td>
+						</tr>
+						<tr>
+							<td>flushInterval</td>
+							<td>-</td>
+							<td><code>2000</code></td>
+							<td>Interval in milliseconds at which the tracer will submit traces to the agent.</td>
+						</tr>
+						<tr>
+							<td>runtimeMetrics</td>
+							<td><code>DD_RUNTIME_METRICS_ENABLED</code></td>
+							<td><code>false</code></td>
+							<td>Whether to enable capturing runtime metrics. Port 8125 (or configured with <code>dogstatsd.port</code>) must be opened on the agent for UDP.</td>
+						</tr>
+						<tr>
+							<td>reportHostname</td>
+							<td><code>DD_TRACE_REPORT_HOSTNAME</code></td>
+							<td><code>false</code></td>
+							<td>Whether to report the system&#39;s hostname for each trace. When disabled, the hostname of the agent will be used instead.</td>
+						</tr>
+						<tr>
+							<td>experimental</td>
+							<td>-</td>
+							<td><code>{}</code></td>
+							<td>Experimental features can be enabled all at once using boolean <code>true</code> or individually using key/value pairs. Please contact us to learn more about the available experimental features.</td>
+						</tr>
+						<tr>
+							<td>plugins</td>
+							<td>-</td>
+							<td><code>true</code></td>
+							<td>Whether or not to enable automatic instrumentation of external libraries using the built-in plugins.</td>
+						</tr>
+						<tr>
+							<td>-</td>
+							<td><code>DD_TRACE_DISABLED_PLUGINS</code></td>
+							<td>-</td>
+							<td>A comma-separated string of integration names automatically disabled when tracer is initialized. Environment variable only e.g. <code>DD_TRACE_DISABLED_PLUGINS=express,dns</code>.</td>
+						</tr>
+						<tr>
+							<td>clientToken</td>
+							<td><code>DD_CLIENT_TOKEN</code></td>
+							<td>-</td>
+							<td>Client token for browser tracing. Can be generated in the UI at <code>Integrations -&gt; APIs</code>.</td>
+						</tr>
+						<tr>
+							<td>logLevel</td>
+							<td><code>DD_TRACE_LOG_LEVEL</code></td>
+							<td><code>debug</code></td>
+							<td>A string for the minimum log level for the tracer to use when debug logging is enabled, e.g. <code>&#39;error&#39;</code>, <code>&#39;debug&#39;</code>.</td>
+						</tr>
+				</tbody></table>
+				<h3 id="custom-logging">Custom Logging</h3>
+				<p>By default, logging from this library is disabled. In order to get debugging information and errors sent to logs, the <code>debug</code> options should be set to <code>true</code> in the <a href="./interfaces/tracer.html#init">init()</a> method.</p>
+				<p>The tracer will then log debug information to <code>console.log()</code> and errors to <code>console.error()</code>. This behavior can be changed by passing a custom logger to the tracer. The logger should contain a <code>debug()</code> and <code>error()</code> methods that can handle messages and errors, respectively.</p>
+				<p>For example:</p>
+				<pre><code class="language-javascript"><span class="hljs-keyword">const</span> bunyan = <span class="hljs-built_in">require</span>(<span class="hljs-string">'bunyan'</span>)
+<span class="hljs-keyword">const</span> logger = bunyan.createLogger({
+  <span class="hljs-attr">name</span>: <span class="hljs-string">'dd-trace'</span>,
+  <span class="hljs-attr">level</span>: <span class="hljs-string">'trace'</span>
+})
+
+<span class="hljs-keyword">const</span> tracer = <span class="hljs-built_in">require</span>(<span class="hljs-string">'dd-trace'</span>).init({
+  <span class="hljs-attr">logger</span>: {
+    <span class="hljs-attr">debug</span>: <span class="hljs-function"><span class="hljs-params">message</span> =&gt;</span> logger.trace(message),
+    <span class="hljs-attr">error</span>: <span class="hljs-function"><span class="hljs-params">err</span> =&gt;</span> logger.error(err)
+  },
+  <span class="hljs-attr">debug</span>: <span class="hljs-literal">true</span>
+})</code></pre>
+			</div>
+		</div>
+		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
+			<nav class="tsd-navigation primary">
+				<ul>
+					<li class="globals  ">
+						<a href="globals.html"><em>Globals</em></a>
+					</li>
+					<li class=" tsd-kind-module tsd-is-not-exported">
+						<a href="modules/plugins.html">plugins</a>
+					</li>
+				</ul>
+			</nav>
+			<nav class="tsd-navigation secondary menu-sticky">
+				<ul class="before-current">
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/samplingrule.html" class="tsd-kind-icon">Sampling<wbr>Rule</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/scope.html" class="tsd-kind-icon">Scope</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/span.html" class="tsd-kind-icon">Span</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/spancontext.html" class="tsd-kind-icon">Span<wbr>Context</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/traceoptions.html" class="tsd-kind-icon">Trace<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/tracer.html" class="tsd-kind-icon">Tracer</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/traceroptions.html" class="tsd-kind-icon">Tracer<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="globals.html#tracer" class="tsd-kind-icon">tracer</a>
+					</li>
+				</ul>
+			</nav>
+		</div>
+	</div>
+</div>
+<footer class="with-border-bottom">
+	<div class="container">
+		<h2>Legend</h2>
+		<div class="tsd-legend-group">
+			<ul class="tsd-legend">
+				<li class="tsd-kind-module"><span class="tsd-kind-icon">Module</span></li>
+				<li class="tsd-kind-object-literal"><span class="tsd-kind-icon">Object literal</span></li>
+				<li class="tsd-kind-variable"><span class="tsd-kind-icon">Variable</span></li>
+				<li class="tsd-kind-function"><span class="tsd-kind-icon">Function</span></li>
+				<li class="tsd-kind-function tsd-has-type-parameter"><span class="tsd-kind-icon">Function with type parameter</span></li>
+				<li class="tsd-kind-index-signature"><span class="tsd-kind-icon">Index signature</span></li>
+				<li class="tsd-kind-type-alias"><span class="tsd-kind-icon">Type alias</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-enum"><span class="tsd-kind-icon">Enumeration</span></li>
+				<li class="tsd-kind-enum-member"><span class="tsd-kind-icon">Enumeration member</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-enum"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-enum"><span class="tsd-kind-icon">Method</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-interface"><span class="tsd-kind-icon">Interface</span></li>
+				<li class="tsd-kind-interface tsd-has-type-parameter"><span class="tsd-kind-icon">Interface with type parameter</span></li>
+				<li class="tsd-kind-constructor tsd-parent-kind-interface"><span class="tsd-kind-icon">Constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-interface"><span class="tsd-kind-icon">Method</span></li>
+				<li class="tsd-kind-index-signature tsd-parent-kind-interface"><span class="tsd-kind-icon">Index signature</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-class"><span class="tsd-kind-icon">Class</span></li>
+				<li class="tsd-kind-class tsd-has-type-parameter"><span class="tsd-kind-icon">Class with type parameter</span></li>
+				<li class="tsd-kind-constructor tsd-parent-kind-class"><span class="tsd-kind-icon">Constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
+				<li class="tsd-kind-accessor tsd-parent-kind-class"><span class="tsd-kind-icon">Accessor</span></li>
+				<li class="tsd-kind-index-signature tsd-parent-kind-class"><span class="tsd-kind-icon">Index signature</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited method</span></li>
+				<li class="tsd-kind-accessor tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited accessor</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><span class="tsd-kind-icon">Protected property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-protected"><span class="tsd-kind-icon">Protected method</span></li>
+				<li class="tsd-kind-accessor tsd-parent-kind-class tsd-is-protected"><span class="tsd-kind-icon">Protected accessor</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private method</span></li>
+				<li class="tsd-kind-accessor tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private accessor</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static property</span></li>
+				<li class="tsd-kind-call-signature tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static method</span></li>
+			</ul>
+		</div>
+	</div>
+</footer>
+<div class="container tsd-generator">
+	<p>Generated using <a href="http://typedoc.org/" target="_blank">TypeDoc</a></p>
+</div>
+<div class="overlay"></div>
+<script src="assets/js/main.js"></script>
+<script>if (location.protocol == 'file:') document.write('<script src="assets/js/search.js"><' + '/script>');</script>
+</body>
+</html>
