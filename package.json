@@ -10,7 +10,6 @@
     "prebuild": "node scripts/prebuild.js",
     "prebuilds": "node scripts/prebuilds.js",
     "bundle": "webpack --display-modules",
-    "prepublishOnly": "node scripts/prepublish.js",
     "postpublish": "node scripts/postpublish.js",
     "install": "node scripts/post_install.js",
     "install:rebuild": "node-gyp-build",
@@ -29,7 +28,9 @@
     "test:browser": "karma start --single-run",
     "leak:core": "node ./scripts/install_plugin_modules && (cd packages/memwatch && yarn) && NODE_PATH=./packages/memwatch/node_modules node --no-warnings ./node_modules/.bin/tape 'packages/dd-trace/test/leak/**/*.js'",
     "leak:plugins": "yarn services && (cd packages/memwatch && yarn) && NODE_PATH=./packages/memwatch/node_modules node --no-warnings ./node_modules/.bin/tape \"packages/datadog-plugin-@($(echo $PLUGINS))/test/leak.js\"",
-    "codecov": "codecov"
+    "codecov": "codecov",
+    "release": "./scripts/release.sh",
+    "release:prepare": "./scripts/release-prepare.sh"
   },
   "repository": {
     "type": "git",
@@ -114,6 +115,7 @@
     "mocha": "^5.2.0",
     "nock": "^11.3.3",
     "nyc": "^14.1.1",
+    "package-json": "^6.5.0",
     "proxyquire": "^1.8.0",
     "retry": "^0.10.1",
     "rimraf": "^3.0.0",
