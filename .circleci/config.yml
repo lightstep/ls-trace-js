@@ -164,7 +164,6 @@ prebuild-job: &prebuild-job
       only:
         - master
         - /v\d+\.\d+/
-        - /.*native.*/
 
 jobs:
   # Linting
