@@ -21,5 +21,6 @@ if [ "$exitCode" = "2" ]; then
   git commit "packages/dd-trace/lib/version.js" --amend --no-edit
 fi
 currentBranch=`git symbolic-ref --short -q HEAD`
+echo "v$version"
 git push --set-upstream origin $currentBranch
-git push origin --follow-tags
+git push origin "v$version"

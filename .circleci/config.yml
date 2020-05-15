@@ -840,7 +840,7 @@ jobs:
           at: ~/dd-trace-js
       - run:
           name: Authenticate with registry
-          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/repo/.npmrc
+          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/dd-trace-js/.npmrc
       - run:
           name: Publish package
           command: npm run release
@@ -1060,4 +1060,4 @@ workflows:
             tags:
               only: /^v.*/
             branches:
-              only: master
+              ignore: /.*/
