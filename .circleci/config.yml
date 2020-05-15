@@ -1056,8 +1056,6 @@ workflows:
   release:
     jobs:
       - deploy:
-          requires:
-            - prebuilds
           filters:
             tags:
               only: /^v.*/

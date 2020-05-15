@@ -130,7 +130,7 @@ ls-trace follows its own versioning scheme. The table below shows the correspond
 ### Release process using auto script 
 1. Run command
 ```commandline
-make publish RELEASE_TYPE=patch
+make release RELEASE_TYPE=patch
 ```
 
 
