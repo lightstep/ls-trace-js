@@ -18,8 +18,8 @@ version=`node "./scripts/check-version.js"`
 exitCode="$?"
 if [ "$exitCode" = "2" ]; then
   echo "Updating \"version.js\" to version \"$version\""
-  git commit "packages/dd-trace/lib/version.js" -m "Updating \"version.js\" to version \"$version\""
+  git commit "packages/dd-trace/lib/version.js" --amend --no-edit
 fi
-
-git push
-git push --tags
+currentBranch=`git symbolic-ref --short -q HEAD`
+git push --set-upstream origin $currentBranch
+git push origin --follow-tags
