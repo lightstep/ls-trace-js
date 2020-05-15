@@ -57,6 +57,7 @@ dev,mkdirp,MIT,Copyright 2010 James Halliday
 dev,mocha,MIT,Copyright 2011-2018 JS Foundation and contributors https://js.foundation
 dev,nock,MIT,Copyright 2017 Pedro Teixeira and other contributors
 dev,nyc,ISC,Copyright 2015 Contributors
+dev,package-json,MIT,Copyright Sindre Sorhus
 dev,proxyquire,MIT,Copyright 2013 Thorsten Lorenz
 dev,retry,MIT,Copyright 2011 Tim Koschützki Felix Geisendörfer
 dev,rimraf,ISC,Copyright Isaac Z. Schlueter and Contributors
