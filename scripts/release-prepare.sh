@@ -22,4 +22,4 @@ if [ "$exitCode" = "2" ]; then
 fi
 currentBranch=`git symbolic-ref --short -q HEAD`
 git push --set-upstream origin $currentBranch
-git push origin --follow-tags
+git push origin "v$version"
