@@ -21,5 +21,5 @@ if [ "$exitCode" = "2" ]; then
   git commit "packages/dd-trace/lib/version.js" -m "Updating \"version.js\" to version \"$version\""
 fi
 
-#git push
-#git push --tags
+git push
+git push --tags
