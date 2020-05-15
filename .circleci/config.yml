@@ -162,8 +162,10 @@ prebuild-job: &prebuild-job
   filters:
     branches:
       only:
+        - alpine_fix
         - master
         - /v\d+\.\d+/
+        - /.*native.*/
 
 jobs:
   # Linting
