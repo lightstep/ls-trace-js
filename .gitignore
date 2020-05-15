@@ -113,3 +113,7 @@ prebuilds.*
 docs/test.js
 !packages/*/test/**/node_modules
 dist
+venv
+.idea
+temp
+*.iml
