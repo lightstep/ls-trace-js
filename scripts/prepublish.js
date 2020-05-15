@@ -57,7 +57,7 @@ getPipeline()
   })
 
 function getPipeline () {
-  return fetch(`project/github/lightstep/ls-trace-js/pipeline?branch=${branch}`)
+  return fetch(`/project/gh/lightstep/ls-trace-js/pipeline?branch=${branch}`)
     .then(response => {
       const pipeline = response.data.items
         .find(item => item.vcs.revision === revision)

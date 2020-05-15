@@ -829,6 +829,21 @@ jobs:
       - run:
           name: Integration tests
           command: yarn test:browser
+  deploy:
+    docker:
+      - image: node
+    working_directory: ~/dd-trace-js
+    resource_class: small
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/dd-trace-js
+      - run:
+          name: Authenticate with registry
+          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/repo/.npmrc
+      - run:
+          name: Publish package
+          command: npm run release
 
 workflows:
   version: 2
@@ -1038,3 +1053,14 @@ workflows:
       - node-tedious
       - node-when
       - node-winston
+  release:
+    jobs:
+      - update-version
+      - deploy:
+          requires:
+            - prebuilds
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/

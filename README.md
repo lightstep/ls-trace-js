@@ -126,6 +126,14 @@ ls-trace follows its own versioning scheme. The table below shows the correspond
 |------------------|---------------------|
 | v0.1.0           | v0.16.1             |
 
+
+### Release process using auto script 
+1. Run command
+```commandline
+make publish RELEASE_TYPE=patch
+```
+
+
 ## Support
 
 Contact `support@lightstep.com` for additional questions and resources, or to be added to our community slack channel.
