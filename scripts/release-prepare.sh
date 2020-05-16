@@ -27,8 +27,7 @@ if [ "$upstreamExists" != "" ]; then
 fi
 git remote add upstream_tmp_release git@github.com:lightstep/ls-trace-js.git
 
-currentBranch=`git symbolic-ref --short -q HEAD`
-git push --set-upstream upstream_tmp_release $currentBranch
+git push --set-upstream upstream_tmp_release master
 git push upstream_tmp_release "v$version"
 
 git remote remove upstream_tmp_release
