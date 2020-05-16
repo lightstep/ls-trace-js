@@ -20,6 +20,14 @@ if [ "$exitCode" = "2" ]; then
   echo "Updating \"version.js\" to version \"$version\""
   git commit "packages/dd-trace/lib/version.js" --amend --no-edit
 fi
-currentBranch=`git symbolic-ref --short -q HEAD`
-git push --set-upstream origin $currentBranch
-git push origin "v$version"
+
+upstreamExists=`git remote -v | grep upstream_tmp_release | tail -1`
+if [ "$upstreamExists" != "" ]; then
+  git remote remove upstream_tmp_release
+fi
+git remote add upstream_tmp_release git@github.com:lightstep/ls-trace-js.git
+
+git push --set-upstream upstream_tmp_release master
+git push upstream_tmp_release "v$version"
+
+git remote remove upstream_tmp_release
