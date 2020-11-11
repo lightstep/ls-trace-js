@@ -73,7 +73,7 @@ function getRes (reply) {
 module.exports = [
   {
     name: 'fastify',
-    versions: ['>=1'],
+    versions: ['>=1.x <2.x'],
     patch (fastify, tracer, config) {
       // `fastify` is a function so we return a wrapper that will replace its export.
       return createWrapFastify(tracer, config)(fastify)
