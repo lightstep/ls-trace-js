@@ -37,7 +37,7 @@ function createWrapGenLog (tracer, config) {
 module.exports = [
   {
     name: 'pino',
-    versions: ['>=5'],
+    versions: ['>=5 <6'],
     patch (pino, tracer, config) {
       if (!tracer._logInjection) return
       this.wrap(Object.getPrototypeOf(pino()), pino.symbols.writeSym, createWrapWrite(tracer, config))
