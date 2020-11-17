@@ -212,7 +212,7 @@ jobs:
   node-core-latest:
     <<: *node-core-base
     docker:
-      - image: node:14
+      - image: node
 
   node-leaks:
     docker:
