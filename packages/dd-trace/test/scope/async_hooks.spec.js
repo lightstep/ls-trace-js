@@ -106,20 +106,20 @@ describe('Scope (async_hooks)', () => {
       expect(scope.active()).to.be.null
     })
 
-    it('should use the active span when using await', done => {
-      thenable.then = () => {
+    it('should use the active span when using await', () => {
+      thenable.then = onFulfill => {
         expect(scope.active()).to.equal(span)
-        done()
+        onFulfill()
       }
 
       scope.bind(thenable)
       scope.activate(span, () => test())
     })
 
-    it('should use the active span when using await in a timer', done => {
-      thenable.then = () => {
+    it('should use the active span when using await in a timer', () => {
+      thenable.then = onFulfill => {
         expect(scope.active()).to.equal(span)
-        done()
+        onFulfill()
       }
 
       test = async () => {
@@ -132,10 +132,10 @@ describe('Scope (async_hooks)', () => {
       scope.activate(span, () => test())
     })
 
-    it('should use the active span when using await in nested scopes', done => {
-      thenable.then = () => {
+    it('should use the active span when using await in nested scopes', () => {
+      thenable.then = onFulfill => {
         expect(scope.active()).to.equal(span)
-        done()
+        onFulfill()
       }
 
       scope.bind(thenable)
@@ -144,10 +144,10 @@ describe('Scope (async_hooks)', () => {
       })
     })
 
-    it('should use the active span when using await in nested scopes', done => {
-      thenable.then = () => {
+    it('should use the active span when using await in nested scopes', () => {
+      thenable.then = onFulfill => {
         expect(scope.active()).to.equal(span)
-        done()
+        onFulfill()
       }
 
       scope.bind(thenable)

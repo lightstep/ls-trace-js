@@ -66,7 +66,7 @@ node-plugin-base: &node-plugin-base
         key: yarn-{{ .Environment.CIRCLE_JOB }}-{{ checksum "package.json" }}
     - run:
         name: Install dependencies
-        command: yarn install
+        command: yarn install --ignore-engines
         environment:
           DD_NATIVE_METRICS: "false"
     - &save-yarn-cache
@@ -179,7 +179,7 @@ jobs:
       - *restore-yarn-cache
       - run:
           name: Install dependencies
-          command: yarn install
+          command: yarn install --ignore-engines
       - *save-yarn-cache
       - run:
           name: Lint
@@ -212,7 +212,7 @@ jobs:
   node-core-latest:
     <<: *node-core-base
     docker:
-      - image: node
+      - image: node:14
 
   node-leaks:
     docker:
@@ -225,7 +225,7 @@ jobs:
       - *restore-yarn-cache
       - run:
           name: Install dependencies
-          command: yarn install
+          command: yarn install --ignore-engines
       - *save-yarn-cache
       - run:
           name: Memory leak tests
